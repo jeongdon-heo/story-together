@@ -125,12 +125,13 @@ model ClassMember {
 // ============================================================
 
 model Session {
-  id      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  classId String    @db.Uuid
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId   String    @db.Uuid
   classRoom ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
 
-  mode    String @db.VarChar(30)
-  title   String? @db.VarChar(200)
+  mode      String  @db.VarChar(30)
+  title     String? @db.VarChar(200)
+  shortCode String? @unique @db.VarChar(8)  // 학생 입장용 단축코드
 
   themeData Json
   settings  Json @default("{}")
@@ -144,6 +145,7 @@ model Session {
 
   @@index([classId])
   @@index([status])
+  @@index([shortCode])
 }
 
 // ============================================================

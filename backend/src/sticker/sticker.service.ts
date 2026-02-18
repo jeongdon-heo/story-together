@@ -311,7 +311,7 @@ export class StickerService implements OnModuleInit {
   // ─── 활동 자동 스티커 부여 ──────────────────────────────
   async checkAndAutoAward(userId: string, storyId: string) {
     try {
-      // 완성된 이야기 수 집계
+      // 완성된 이야기 수 + 글자 수 집계
       const [completedCount, stories] = await Promise.all([
         this.prisma.story.count({ where: { userId, status: 'completed' } }),
         this.prisma.story.findMany({
@@ -322,6 +322,21 @@ export class StickerService implements OnModuleInit {
       const totalWords = stories.reduce(
         (sum, s) => sum + ((s.metadata as any)?.wordCount || 0), 0,
       );
+
+      // 릴레이 참여 세션 수 (학생이 파트를 제출한 릴레이 이야기 수)
+      const relayParts = await this.prisma.storyPart.findMany({
+        where: {
+          authorId: userId,
+          authorType: 'student',
+          story: { session: { mode: 'relay' } },
+        },
+        distinct: ['storyId'],
+        select: { storyId: true },
+      });
+      const relayCount = relayParts.length;
+
+      // 분기 투표 수
+      const branchVoteCount = await this.prisma.vote.count({ where: { userId } });
 
       // 조건부 스티커 정의 전체 조회
       const condDefs = await this.prisma.stickerDef.findMany({
@@ -345,6 +360,8 @@ export class StickerService implements OnModuleInit {
 
         if (cond.type === 'story_count' && completedCount >= cond.threshold) met = true;
         else if (cond.type === 'word_count' && totalWords >= cond.threshold) met = true;
+        else if (cond.type === 'relay_count' && relayCount >= cond.threshold) met = true;
+        else if (cond.type === 'branch_count' && branchVoteCount >= cond.threshold) met = true;
 
         if (met) {
           await this.prisma.userSticker.create({

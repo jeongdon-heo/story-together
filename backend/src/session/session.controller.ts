@@ -12,6 +12,7 @@ import { SessionService } from './session.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('sessions')
@@ -29,11 +30,22 @@ export class SessionController {
 
   @Get()
   async findMany(
+    @CurrentUser() user: User,
     @Query('classId') classId?: string,
     @Query('mode') mode?: string,
     @Query('status') status?: string,
   ) {
-    const data = await this.sessionService.findMany({ classId, mode, status });
+    // 교사는 자기 반 세션만 조회
+    const teacherId = user.role === 'teacher' ? user.id : undefined;
+    const data = await this.sessionService.findMany({ classId, mode, status, teacherId });
+    return { data };
+  }
+
+  // 단축코드로 세션 조회 (학생 입장용, 인증 불필요)
+  @Public()
+  @Get('join/:code')
+  async findByCode(@Param('code') code: string) {
+    const data = await this.sessionService.findByShortCode(code);
     return { data };
   }
 

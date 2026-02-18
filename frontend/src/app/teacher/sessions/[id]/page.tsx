@@ -21,6 +21,81 @@ import { getSessionAnalytics, type SessionAnalytics } from '../../../../lib/anal
 const MODE_EMOJI: Record<string, string> = {
   solo: '✍️', relay: '🔗', same_start: '🌟', branch: '🌿',
 };
+const MODE_LABEL: Record<string, string> = {
+  solo: '1:1 자유', relay: '릴레이', same_start: '같은 시작', branch: '이야기 갈래',
+};
+
+// ─── 입장 코드 패널 (릴레이 / 같은 시작 공용) ──────────────
+function RelayCodePanel({ session }: { session: Session }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (session.shortCode) {
+      navigator.clipboard.writeText(session.shortCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!session.shortCode) return null;
+
+  const isRelay = session.mode === 'relay';
+  const isBranchMode = session.mode === 'branch';
+  const emoji = isRelay ? '🔗' : isBranchMode ? '🌿' : '🌟';
+  const menuLabel = isRelay ? '릴레이 이야기' : isBranchMode ? '이야기 갈래' : '같은 시작 이야기';
+  const path = isRelay ? '/student/relay' : isBranchMode ? '/student/branch' : '/student/same-start';
+
+  return (
+    <div className={`border-2 rounded-2xl p-5 mb-5 ${
+      isRelay ? 'bg-indigo-50 border-indigo-200'
+      : isBranchMode ? 'bg-emerald-50 border-emerald-200'
+      : 'bg-amber-50 border-amber-200'
+    }`}>
+      <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${
+        isRelay ? 'text-indigo-600' : isBranchMode ? 'text-emerald-600' : 'text-amber-600'
+      }`}>
+        {emoji} 학생 입장 코드
+      </p>
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`flex-1 bg-white border-2 rounded-xl px-4 py-3 text-center ${
+          isRelay ? 'border-indigo-300' : isBranchMode ? 'border-emerald-300' : 'border-amber-300'
+        }`}>
+          <span className={`font-mono text-4xl font-black tracking-[0.3em] ${
+            isRelay ? 'text-indigo-700' : isBranchMode ? 'text-emerald-700' : 'text-amber-700'
+          }`}>
+            {session.shortCode}
+          </span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className={`px-4 py-3 rounded-xl font-bold text-sm transition-all ${
+            copied
+              ? 'bg-green-500 text-white'
+              : isRelay
+              ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+              : isBranchMode
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+              : 'bg-amber-500 text-white hover:bg-amber-600'
+          }`}
+        >
+          {copied ? '✓ 복사됨' : '복사'}
+        </button>
+      </div>
+      <p className={`text-xs text-center ${
+        isRelay ? 'text-indigo-500' : isBranchMode ? 'text-emerald-600' : 'text-amber-600'
+      }`}>
+        학생들이{' '}
+        <span className="font-bold">{menuLabel} → 코드 입력</span>
+        에서 이 코드를 입력해 입장합니다
+      </p>
+      <div className="mt-3 pt-3 border-t border-gray-200">
+        <p className="text-[11px] text-gray-500 text-center font-mono">
+          직접 주소: {path} (코드 입력 후 이동)
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function SessionDetailPage() {
   const params = useParams();
@@ -55,7 +130,6 @@ export default function SessionDetailPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // 세션 상태 변경
   const handleStatusChange = async (action: 'pause' | 'resume' | 'complete') => {
     if (!confirm(`세션을 ${action === 'pause' ? '일시정지' : action === 'resume' ? '재개' : '종료'}하시겠습니까?`)) return;
     setActioning(true);
@@ -103,6 +177,10 @@ export default function SessionDetailPage() {
 
   if (!session) return null;
 
+  const isRelay = session.mode === 'relay';
+  const isSameStart = session.mode === 'same_start';
+  const isBranch = session.mode === 'branch';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
       <div className="max-w-3xl mx-auto">
@@ -114,21 +192,26 @@ export default function SessionDetailPage() {
           <div className="flex items-start justify-between mt-1">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                {MODE_EMOJI[session.mode]} {session.title || `${session.mode} 세션`}
+                {MODE_EMOJI[session.mode]} {session.title || `${MODE_LABEL[session.mode]} 세션`}
               </h1>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full mt-1 inline-block ${
-                session.status === 'active' ? 'bg-green-100 text-green-700'
-                : session.status === 'paused' ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-gray-100 text-gray-500'
-              }`}>
-                {session.status === 'active' ? '● 진행 중'
-                 : session.status === 'paused' ? '⏸ 일시정지'
-                 : '✓ 완료'}
-              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  session.status === 'active' ? 'bg-green-100 text-green-700'
+                  : session.status === 'paused' ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {session.status === 'active' ? '● 진행 중'
+                   : session.status === 'paused' ? '⏸ 일시정지'
+                   : '✓ 완료'}
+                </span>
+                {session.classRoom && (
+                  <span className="text-xs text-gray-400">{session.classRoom.name}</span>
+                )}
+              </div>
             </div>
 
             {/* 세션 제어 버튼 */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               {session.status === 'active' && (
                 <button
                   onClick={() => handleStatusChange('pause')}
@@ -156,6 +239,22 @@ export default function SessionDetailPage() {
                   ✓ 종료
                 </button>
               )}
+              {isSameStart && (
+                <button
+                  onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
+                  className="px-3 py-1.5 bg-amber-400 text-white text-xs font-bold rounded-lg hover:bg-amber-500"
+                >
+                  🖼️ 갤러리
+                </button>
+              )}
+              {isBranch && stories.length > 0 && (
+                <button
+                  onClick={() => router.push(`/student/branch/${sessionId}/tree`)}
+                  className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600"
+                >
+                  🌿 트리
+                </button>
+              )}
               <button
                 onClick={() => router.push(`/teacher/export/collection?sessionId=${sessionId}`)}
                 className="px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600"
@@ -165,6 +264,11 @@ export default function SessionDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 릴레이/같은시작/분기 → 입장코드 패널 */}
+        {(isRelay || isSameStart || isBranch) && session.status !== 'completed' && (
+          <RelayCodePanel session={session} />
+        )}
 
         {/* 탭 */}
         <div className="flex gap-2 mb-4">
@@ -191,10 +295,64 @@ export default function SessionDetailPage() {
         {/* ─── 이야기 목록 탭 ─── */}
         {activeTab === 'stories' && (
           <div className="space-y-3">
+            {/* 릴레이 모드: 이야기가 1개 (공유 이야기) */}
+            {isRelay && stories.length > 0 && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-3 mb-2 flex items-center gap-2">
+                <span className="text-indigo-500 text-sm">🔗</span>
+                <p className="text-xs text-indigo-700">
+                  릴레이 모드: 반 전체가 하나의 이야기를 함께 씁니다.
+                  현재 <span className="font-bold">{stories[0]?.parts?.length || 0}개</span> 파트 작성됨.
+                </p>
+              </div>
+            )}
+
+            {/* 분기 모드: 트리 안내 */}
+            {isBranch && stories.length > 0 && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-500 text-sm">🌿</span>
+                  <p className="text-xs text-emerald-700">
+                    분기 모드: 반 전체가 투표로 이야기 방향을 선택합니다.
+                    현재 <span className="font-bold">{stories[0]?.parts?.length || 0}개</span> 파트, 갈림길 다수결 진행 중.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push(`/student/branch/${sessionId}/tree`)}
+                  className="text-[10px] px-2 py-1 bg-emerald-500 text-white rounded-lg shrink-0 hover:bg-emerald-600"
+                >
+                  트리 →
+                </button>
+              </div>
+            )}
+
+            {/* 같은 시작 모드: 갤러리 안내 */}
+            {isSameStart && stories.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 text-sm">🌟</span>
+                  <p className="text-xs text-amber-700">
+                    같은 시작 모드: 학생마다 개별 이야기를 씁니다.
+                    현재 <span className="font-bold">{stories.length}명</span> 참여 중.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
+                  className="text-[10px] px-2 py-1 bg-amber-500 text-white rounded-lg shrink-0 hover:bg-amber-600"
+                >
+                  갤러리 →
+                </button>
+              </div>
+            )}
+
             {stories.length === 0 ? (
               <div className="text-center py-10 text-gray-400">
                 <p className="text-3xl mb-2">📖</p>
                 <p className="text-sm">아직 이야기가 없습니다</p>
+                {(isRelay || isSameStart) && session.shortCode && (
+                  <p className="text-xs mt-2 text-indigo-400">
+                    학생들이 코드 <span className="font-mono font-bold">{session.shortCode}</span>로 입장하면 시작됩니다
+                  </p>
+                )}
               </div>
             ) : (
               stories.map((story) => (
@@ -206,14 +364,16 @@ export default function SessionDetailPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm">
-                        {(story as any).user?.avatarIcon || '👤'}
+                        {isRelay ? '🔗' : (story as any).user?.avatarIcon || '👤'}
                       </div>
                       <div>
                         <p className="font-semibold text-sm text-gray-900">
-                          {(story as any).user?.name || '학생'}
+                          {isRelay ? '릴레이 공유 이야기' : ((story as any).user?.name || '학생')}
                         </p>
                         <p className="text-xs text-gray-400">
-                          {story.parts.length}개 파트 · {story.metadata?.wordCount || 0}자
+                          {story.parts.length}개 파트
+                          {' · '}
+                          {story.parts.filter(p => p.authorType === 'student').length}명 참여
                           {story.parts.some((p) => p.flagged) && (
                             <span className="ml-2 text-red-500">🚩 플래그 있음</span>
                           )}
@@ -245,10 +405,18 @@ export default function SessionDetailPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold text-gray-500">
-                              {part.authorType === 'ai' ? '🤖 AI' : '✏️ 학생'}
-                              {part.flagged && <span className="ml-1 text-red-500">🚩</span>}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-gray-500">
+                                {part.authorType === 'ai' ? '🤖 AI' : '✏️ 학생'}
+                                {part.flagged && <span className="ml-1 text-red-500">🚩</span>}
+                              </span>
+                              {/* 릴레이 모드: 작성자 이름 표시 */}
+                              {isRelay && part.authorType === 'student' && (
+                                <span className="text-[10px] text-gray-400">
+                                  {(part as any).metadata?.authorName || ''}
+                                </span>
+                              )}
+                            </div>
                             {part.authorType === 'student' && (
                               <div className="flex gap-1">
                                 <button
@@ -367,7 +535,6 @@ export default function SessionDetailPage() {
         {/* ─── 통계 탭 ─── */}
         {activeTab === 'analytics' && analytics && (
           <div className="space-y-4">
-            {/* 요약 카드 */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: '전체 이야기', value: analytics.totalStories, emoji: '📖' },
@@ -383,9 +550,10 @@ export default function SessionDetailPage() {
               ))}
             </div>
 
-            {/* 학생별 기여도 */}
             <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-              <h3 className="text-sm font-bold text-gray-700 mb-3">학생별 참여 현황</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-3">
+                {isRelay ? '참여자별 기여도' : '학생별 참여 현황'}
+              </h3>
               <div className="space-y-2">
                 {analytics.studentStats.map((s) => (
                   <div key={s.storyId} className="flex items-center gap-3">
@@ -401,7 +569,6 @@ export default function SessionDetailPage() {
                           {s.status === 'completed' ? '완성' : '작성 중'}
                         </span>
                       </div>
-                      {/* 작성량 바 */}
                       <div className="mt-1 flex items-center gap-2">
                         <div className="flex-1 bg-gray-100 rounded-full h-1.5">
                           <div

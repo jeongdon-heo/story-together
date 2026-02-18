@@ -6,6 +6,22 @@ import { useRelaySocket } from '../../../../hooks/useRelaySocket';
 import { useRelayStore } from '../../../../stores/relay';
 import { relayApi } from '../../../../lib/relay-api';
 
+// BGM 분위기 표시
+const BGM_MOOD: Record<string, { emoji: string; label: string; color: string }> = {
+  peaceful:  { emoji: '🌸', label: '평화로운',   color: 'text-green-600 bg-green-50' },
+  travel:    { emoji: '🗺️', label: '여행하는',   color: 'text-blue-600 bg-blue-50' },
+  adventure: { emoji: '⚡', label: '모험하는',   color: 'text-orange-600 bg-orange-50' },
+  tension:   { emoji: '😰', label: '긴장된',     color: 'text-red-600 bg-red-50' },
+  scary:     { emoji: '👻', label: '무서운',     color: 'text-purple-600 bg-purple-50' },
+  sad:       { emoji: '😢', label: '슬픈',       color: 'text-blue-400 bg-blue-50' },
+  warm:      { emoji: '☀️', label: '따뜻한',     color: 'text-amber-600 bg-amber-50' },
+  magical:   { emoji: '✨', label: '마법같은',   color: 'text-violet-600 bg-violet-50' },
+  joy:       { emoji: '🎉', label: '신나는',     color: 'text-yellow-600 bg-yellow-50' },
+  night:     { emoji: '🌙', label: '신비로운',   color: 'text-indigo-600 bg-indigo-50' },
+  victory:   { emoji: '🏆', label: '승리하는',   color: 'text-gold-600 bg-yellow-50' },
+  epilogue:  { emoji: '📖', label: '마무리',     color: 'text-gray-600 bg-gray-50' },
+};
+
 // 임시 사용자 정보 (실제로는 auth store에서 가져옴)
 function useCurrentUser() {
   if (typeof window === 'undefined') {
@@ -192,6 +208,7 @@ export default function RelayPage() {
     completed,
     contentRejected,
     hints,
+    bgmMood,
     setStoryParts,
     setContentRejected,
     setHints,
@@ -397,11 +414,18 @@ export default function RelayPage() {
             <TimerBar secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
           </div>
 
-          {/* 참여자 목록 */}
-          <ParticipantList
-            participants={participants}
-            currentStudentId={currentTurn?.currentStudentId || ''}
-          />
+          {/* BGM 분위기 + 참여자 목록 */}
+          <div className="flex items-center justify-between mb-2">
+            <ParticipantList
+              participants={participants}
+              currentStudentId={currentTurn?.currentStudentId || ''}
+            />
+            {bgmMood && BGM_MOOD[bgmMood] && (
+              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ml-2 ${BGM_MOOD[bgmMood].color}`}>
+                {BGM_MOOD[bgmMood].emoji} {BGM_MOOD[bgmMood].label}
+              </span>
+            )}
+          </div>
         </div>
       </header>
 

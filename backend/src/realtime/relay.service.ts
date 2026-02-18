@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { StickerService } from '../sticker/sticker.service';
 
 // 세션별 릴레이 상태
 interface RelayState {
@@ -35,6 +36,7 @@ export class RelayService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private stickerService: StickerService,
   ) {}
 
   setServer(server: Server) {
@@ -178,6 +180,9 @@ export class RelayService {
         metadata: { authorName: current.name, authorColor: current.color },
       },
     });
+
+    // 릴레이 참여 스티커 자동 부여 (비동기)
+    this.stickerService.checkAndAutoAward(userId, storyId).catch(() => {});
 
     // 학생 파트 브로드캐스트
     const room = `story:${storyId}`;

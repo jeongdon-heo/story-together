@@ -58,6 +58,8 @@ interface RelayState {
   contentRejected: ContentRejection | null;
   // 힌트
   hints: Array<{ text: string; direction: string }>;
+  // BGM 분위기
+  bgmMood: string;
 
   // 액션
   setParticipants: (participants: Participant[]) => void;
@@ -72,6 +74,7 @@ interface RelayState {
   setCompleted: (completed: boolean) => void;
   setContentRejected: (rejection: ContentRejection | null) => void;
   setHints: (hints: Array<{ text: string; direction: string }>) => void;
+  setBgmMood: (mood: string) => void;
   reset: () => void;
 }
 
@@ -86,6 +89,7 @@ const initialState = {
   completed: false,
   contentRejected: null,
   hints: [],
+  bgmMood: 'peaceful',
 };
 
 export const useRelayStore = create<RelayState>((set) => ({
@@ -138,6 +142,8 @@ export const useRelayStore = create<RelayState>((set) => ({
   setContentRejected: (contentRejected) => set({ contentRejected }),
 
   setHints: (hints) => set({ hints }),
+
+  setBgmMood: (bgmMood) => set({ bgmMood }),
 
   reset: () => set(initialState),
 }));

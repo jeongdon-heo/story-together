@@ -5,10 +5,12 @@ export interface Session {
   classId: string | null;
   mode: string;
   title: string | null;
+  shortCode: string | null;
   status: 'active' | 'paused' | 'completed';
   themeData: Record<string, any>;
   settings: Record<string, any>;
   createdAt: string;
+  classRoom?: { name: string; grade: number } | null;
 }
 
 export interface StoryPartInfo {

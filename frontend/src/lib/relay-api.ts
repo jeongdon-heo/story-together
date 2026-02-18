@@ -3,6 +3,10 @@ import type { ApiResponse } from '../types/auth';
 import type { Story } from '../types/story';
 
 export const relayApi = {
+  // 단축코드로 세션 조회 (학생 입장)
+  findByCode: (code: string) =>
+    api.get<ApiResponse<any>>(`/sessions/join/${code}`).then((r) => r.data),
+
   // 릴레이 세션 생성 (교사)
   createSession: (data: {
     classId: string;

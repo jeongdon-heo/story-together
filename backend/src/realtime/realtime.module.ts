@@ -4,6 +4,7 @@ import { RelayService } from './relay.service';
 import { BranchService } from './branch.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AiModule } from '../ai/ai.module';
+import { StickerModule } from '../sticker/sticker.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -11,6 +12,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   imports: [
     PrismaModule,
     AiModule,
+    StickerModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

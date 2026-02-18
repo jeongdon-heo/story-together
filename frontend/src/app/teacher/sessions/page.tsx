@@ -9,6 +9,7 @@ import {
   createSession,
   type Session,
 } from '../../../lib/teacher-api';
+import { sameStartApi, type SavedIntro } from '../../../lib/same-start-api';
 import type { ClassRoom } from '../../../types/class';
 
 const MODE_OPTIONS = [
@@ -40,8 +41,14 @@ export default function SessionsPage() {
     classId: '',
     mode: 'solo',
     title: '',
+    introText: '',       // same_start 전용
   });
   const [creating, setCreating] = useState(false);
+
+  // 같은 시작 - 저장된 도입부 관련
+  const [savedIntros, setSavedIntros] = useState<SavedIntro[]>([]);
+  const [showIntroLibrary, setShowIntroLibrary] = useState(false);
+  const [introsLoading, setIntrosLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -59,18 +66,42 @@ export default function SessionsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // same_start 모드 선택 시 도입부 목록 로드
+  const handleModeChange = async (mode: string) => {
+    setForm((f) => ({ ...f, mode, introText: '' }));
+    if (mode === 'same_start') {
+      setIntrosLoading(true);
+      try {
+        const res = await sameStartApi.getIntros();
+        setSavedIntros(res.data);
+      } catch {
+        setSavedIntros([]);
+      } finally {
+        setIntrosLoading(false);
+      }
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.mode) return;
+    if (form.mode === 'same_start' && !form.introText.trim()) {
+      alert('같은 시작 모드는 공통 도입부를 입력해야 합니다');
+      return;
+    }
     setCreating(true);
     try {
+      const themeData: Record<string, any> = {};
+      if (form.mode === 'same_start') {
+        themeData.introText = form.introText.trim();
+      }
       const sess = await createSession({
         classId: form.classId || undefined,
         mode: form.mode,
         title: form.title || undefined,
-        themeData: {},
+        themeData,
       });
       setShowCreate(false);
-      setForm({ classId: '', mode: 'solo', title: '' });
+      setForm({ classId: '', mode: 'solo', title: '', introText: '' });
       router.push(`/teacher/sessions/${sess.id}`);
     } finally {
       setCreating(false);
@@ -104,13 +135,14 @@ export default function SessionsPage() {
             <h2 className="font-bold text-gray-800 mb-4">새 수업 세션 만들기</h2>
 
             <div className="space-y-3">
+              {/* 이야기 모드 선택 */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">이야기 모드</label>
                 <div className="grid grid-cols-2 gap-2">
                   {MODE_OPTIONS.map((m) => (
                     <button
                       key={m.value}
-                      onClick={() => setForm((f) => ({ ...f, mode: m.value }))}
+                      onClick={() => handleModeChange(m.value)}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
                         form.mode === m.value
                           ? 'border-indigo-500 bg-indigo-50'
@@ -124,6 +156,89 @@ export default function SessionsPage() {
                 </div>
               </div>
 
+              {/* 같은 시작: 도입부 입력 */}
+              {form.mode === 'same_start' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold text-amber-700">📖 공통 도입부 *</label>
+                    <button
+                      onClick={() => setShowIntroLibrary((v) => !v)}
+                      className="text-xs text-amber-600 underline hover:text-amber-800"
+                    >
+                      {showIntroLibrary ? '라이브러리 닫기' : '저장된 도입부 불러오기'}
+                    </button>
+                  </div>
+
+                  {/* 저장된 도입부 라이브러리 */}
+                  {showIntroLibrary && (
+                    <div className="mb-3">
+                      {introsLoading ? (
+                        <p className="text-xs text-amber-600">불러오는 중...</p>
+                      ) : savedIntros.length === 0 ? (
+                        <div className="text-center py-3">
+                          <p className="text-xs text-gray-400">저장된 도입부가 없습니다</p>
+                          <Link
+                            href="/teacher/intros"
+                            className="text-xs text-indigo-500 underline mt-1 inline-block"
+                          >
+                            도입부 관리 페이지로 →
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {savedIntros.map((intro) => (
+                            <button
+                              key={intro.id}
+                              onClick={() => {
+                                setForm((f) => ({ ...f, introText: intro.introText }));
+                                setShowIntroLibrary(false);
+                              }}
+                              className="w-full text-left p-2.5 bg-white border border-amber-200 rounded-lg hover:border-amber-400 transition-colors"
+                            >
+                              <p className="text-xs font-semibold text-gray-700 mb-1">
+                                {intro.title || '제목 없음'}
+                                {intro.grade && (
+                                  <span className="ml-2 text-amber-600">{intro.grade}학년</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-gray-500 line-clamp-2">{intro.introText}</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <textarea
+                    value={form.introText}
+                    onChange={(e) => setForm((f) => ({ ...f, introText: e.target.value }))}
+                    placeholder="예: 어느 봄날, 작은 마을 끝에 이상한 문이 나타났어요. 문을 열면 어디로 갈 수 있을까요?"
+                    rows={4}
+                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none bg-white"
+                  />
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    모든 학생이 이 도입부로 시작해 각자 다른 이야기를 씁니다
+                  </p>
+                </div>
+              )}
+
+              {/* 분기 모드: 안내 */}
+              {form.mode === 'branch' && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-emerald-700 mb-1">🌿 분기 모드 안내</p>
+                  <ul className="text-xs text-emerald-700 space-y-1">
+                    <li>• AI가 이야기를 시작하면 갈림길 3가지가 제시됩니다</li>
+                    <li>• 학생들이 다수결 투표로 이야기 방향을 선택합니다</li>
+                    <li>• 투표 후 AI가 이야기를 이어 쓰고, 학생이 한 번 더 작성합니다</li>
+                    <li>• 이 과정을 반복해 다채로운 이야기 트리가 만들어집니다</li>
+                  </ul>
+                  <p className="text-[11px] text-emerald-600 mt-2">
+                    💡 반을 선택하면 반원들이 자동으로 참여자 목록에 추가됩니다
+                  </p>
+                </div>
+              )}
+
+              {/* 반 선택 */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">반 (선택)</label>
                 <select
@@ -138,6 +253,7 @@ export default function SessionsPage() {
                 </select>
               </div>
 
+              {/* 세션 제목 */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">세션 제목 (선택)</label>
                 <input
@@ -157,7 +273,11 @@ export default function SessionsPage() {
                   {creating ? '생성 중...' : '세션 시작'}
                 </button>
                 <button
-                  onClick={() => setShowCreate(false)}
+                  onClick={() => {
+                    setShowCreate(false);
+                    setShowIntroLibrary(false);
+                    setForm({ classId: '', mode: 'solo', title: '', introText: '' });
+                  }}
                   className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50"
                 >
                   취소
@@ -218,9 +338,16 @@ export default function SessionsPage() {
                       {STATUS_LABEL[s.status]}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400">
-                    {new Date(s.createdAt).toLocaleDateString('ko-KR')}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-400">
+                      {new Date(s.createdAt).toLocaleDateString('ko-KR')}
+                    </p>
+                    {s.shortCode && s.status !== 'completed' && (
+                      <span className="text-[10px] font-mono font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+                        {s.shortCode}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => router.push(`/teacher/sessions/${s.id}`)}

@@ -182,7 +182,7 @@ export default function BranchPage() {
     participants, storyParts, currentChoices, voteCounts, totalVotes,
     myVote, voteSecondsLeft, voteResult, currentNodeId,
     currentWriterId, currentWriterName, phase, aiWriting,
-    completed, hints, setMyVote, setStoryParts,
+    completed, hints, contentRejected, setMyVote, setStoryParts,
   } = useBranchStore();
 
   const { castVote, submitPart, requestHint, finishStory, startBranch } =
@@ -372,6 +372,17 @@ export default function BranchPage() {
             voteResult={voteResult}
             onVote={handleVote}
           />
+        )}
+
+        {/* 콘텐츠 반려 알림 */}
+        {contentRejected && (
+          <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 mb-3">
+            <p className="text-sm font-bold text-red-600 mb-1">⚠️ 내용을 다시 써 주세요</p>
+            <p className="text-xs text-red-500">{contentRejected.reason}</p>
+            {contentRejected.suggestion && (
+              <p className="text-xs text-gray-600 mt-1">💡 {contentRejected.suggestion}</p>
+            )}
+          </div>
         )}
 
         {/* 힌트 */}

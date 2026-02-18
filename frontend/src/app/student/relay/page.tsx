@@ -2,19 +2,37 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { relayApi } from '../../../lib/relay-api';
 
 export default function RelayEntryPage() {
   const router = useRouter();
-  const [sessionId, setSessionId] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleJoin = () => {
-    const id = sessionId.trim();
-    if (!id) {
-      setError('세션 ID를 입력해 주세요');
+  const handleJoin = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) {
+      setError('입장 코드를 입력해 주세요');
       return;
     }
-    router.push(`/student/relay/${id}`);
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // shortCode(6자리)면 API로 세션 ID 조회
+      if (trimmed.length <= 8 && !/^[0-9a-f-]{36}$/i.test(trimmed)) {
+        const res = await relayApi.findByCode(trimmed);
+        router.push(`/student/relay/${res.data.id}`);
+      } else {
+        // 직접 UUID 입력한 경우
+        router.push(`/student/relay/${trimmed}`);
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.message || '코드를 찾을 수 없습니다');
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,26 +41,28 @@ export default function RelayEntryPage() {
         <div className="text-5xl mb-4">🔗</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">릴레이 이야기</h1>
         <p className="text-gray-500 text-sm mb-6">
-          선생님이 알려준 세션 코드를 입력하세요
+          선생님이 알려준 <span className="font-bold text-indigo-600">6자리 코드</span>를 입력하세요
         </p>
 
         {error && (
-          <p className="text-red-500 text-sm mb-3">{error}</p>
+          <p className="text-red-500 text-sm mb-3 bg-red-50 rounded-xl px-3 py-2">{error}</p>
         )}
 
         <input
-          value={sessionId}
-          onChange={(e) => setSessionId(e.target.value)}
-          placeholder="세션 ID 입력"
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-center font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 mb-4"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="예: AB3X9Z"
+          maxLength={10}
+          className="w-full border-2 border-gray-200 rounded-2xl px-4 py-4 text-center font-mono text-2xl font-bold tracking-widest focus:outline-none focus:border-indigo-400 mb-4 uppercase"
           onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
         />
 
         <button
           onClick={handleJoin}
-          className="w-full py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors"
+          disabled={loading || !code.trim()}
+          className="w-full py-3 bg-indigo-500 text-white rounded-xl font-bold hover:bg-indigo-600 transition-colors disabled:opacity-50 text-lg"
         >
-          입장하기!
+          {loading ? '입장 중...' : '입장하기!'}
         </button>
 
         <button

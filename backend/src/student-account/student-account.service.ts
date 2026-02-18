@@ -246,6 +246,9 @@ export class StudentAccountService {
   async deleteStudent(teacherId: string, studentId: string) {
     await this.verifyStudentOwner(teacherId, studentId);
 
+    // ClassMember 먼저 삭제 (FK 제약)
+    await this.prisma.classMember.deleteMany({ where: { userId: studentId } });
+
     await this.prisma.user.delete({ where: { id: studentId } });
 
     return { message: '학생 계정이 삭제되었습니다' };

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { StickerService } from '../sticker/sticker.service';
 
 type BranchPhase = 'voting' | 'ai_writing' | 'student_writing' | 'done';
 
@@ -41,6 +42,7 @@ export class BranchService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private stickerService: StickerService,
   ) {}
 
   setServer(server: Server) {
@@ -209,6 +211,9 @@ export class BranchService {
     }
 
     state.votes.set(userId, choiceIdx);
+
+    // 분기 투표 스티커 자동 부여 (비동기)
+    this.stickerService.checkAndAutoAward(userId, storyId).catch(() => {});
 
     // 투표 현황 브로드캐스트
     const voteCounts: Record<number, number> = {};

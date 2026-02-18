@@ -64,6 +64,8 @@ interface BranchState {
   // 완료
   completed: boolean;
   completedInfo: any;
+  // 콘텐츠 반려
+  contentRejected: { reason: string; suggestion: string } | null;
   // 힌트
   hints: Array<{ text: string; direction: string }>;
 
@@ -83,6 +85,7 @@ interface BranchState {
   setVoteTimer: (seconds: number) => void;
   setCompleted: (info: any) => void;
   setHints: (hints: Array<{ text: string; direction: string }>) => void;
+  setContentRejected: (r: { reason: string; suggestion: string } | null) => void;
   reset: () => void;
 }
 
@@ -104,6 +107,7 @@ const initialState = {
   completed: false,
   completedInfo: null,
   hints: [],
+  contentRejected: null,
 };
 
 export const useBranchStore = create<BranchState>((set) => ({
@@ -173,6 +177,8 @@ export const useBranchStore = create<BranchState>((set) => ({
   setCompleted: (completedInfo) => set({ completed: true, completedInfo, phase: 'done' }),
 
   setHints: (hints) => set({ hints }),
+
+  setContentRejected: (contentRejected) => set({ contentRejected }),
 
   reset: () => set(initialState),
 }));

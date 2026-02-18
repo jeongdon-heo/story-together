@@ -36,6 +36,7 @@ export function useBranchSocket({
     setVoteTimer,
     setCompleted,
     setHints,
+    setContentRejected,
   } = useBranchStore();
 
   useEffect(() => {
@@ -97,6 +98,12 @@ export function useBranchSocket({
       setHints(data.hints);
     });
 
+    socket.on('branch:content_rejected', (data: any) => {
+      setContentRejected({ reason: data.reason, suggestion: data.suggestion });
+      // 3초 후 자동 해제
+      setTimeout(() => setContentRejected(null), 5000);
+    });
+
     return () => {
       socket.emit('leave_session', { sessionId, userId });
       [
@@ -104,7 +111,7 @@ export function useBranchSocket({
         'branch:new_choices', 'branch:vote_update', 'branch:vote_timer_tick',
         'branch:vote_result', 'branch:ai_writing', 'branch:ai_complete',
         'branch:student_submitted', 'branch:student_turn', 'branch:tree_updated',
-        'branch:story_completed', 'branch:hint_response',
+        'branch:story_completed', 'branch:hint_response', 'branch:content_rejected',
       ].forEach((ev) => socket.off(ev));
     };
   }, [storyId, sessionId, userId, userName, token]);
