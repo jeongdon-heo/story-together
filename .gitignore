@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma
+backend/prisma/migrations/
+
+# Docker volumes
+pgdata/
+redisdata/
+
+# Coverage
+coverage/
+
+# Misc
+*.tsbuildinfo
+
+# Generated uploads (TTS audio, illustrations, exports)
+backend/uploads/

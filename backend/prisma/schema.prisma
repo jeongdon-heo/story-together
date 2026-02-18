@@ -1,0 +1,484 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto]
+}
+
+// ============================================================
+// 1. 사용자 및 학교
+// ============================================================
+
+model School {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(200)
+  region    String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+
+  users      User[]
+  classRooms ClassRoom[]
+}
+
+model User {
+  id    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String? @unique @db.VarChar(255)
+  name  String @db.VarChar(100)
+  role  String @default("student") @db.VarChar(20)
+
+  // 인증 방식
+  provider   String? @db.VarChar(20)
+  providerId String? @db.VarChar(255)
+
+  // 교사가 생성한 학생 계정용 (provider = 'local')
+  loginId            String?  @unique @db.VarChar(50)
+  passwordHash       String?  @db.VarChar(255)
+  createdBy          String?  @db.Uuid
+  createdByUser      User?    @relation("CreatedByUser", fields: [createdBy], references: [id])
+  createdStudents    User[]   @relation("CreatedByUser")
+  mustChangePassword Boolean  @default(false)
+
+  // 프로필
+  avatarIcon String?  @db.VarChar(50)
+  grade      Int?
+  schoolId   String?  @db.Uuid
+  school     School?  @relation(fields: [schoolId], references: [id])
+
+  // 개인 설정 (JSON)
+  settings Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  classRooms       ClassRoom[]     @relation("TeacherClassRooms")
+  classMemberships ClassMember[]
+  stories          Story[]
+  storyParts       StoryPart[]
+  votes            Vote[]
+  reactions        Reaction[]
+  feedbacks        Feedback[]
+  comments         Comment[]
+  refreshTokens    RefreshToken[]
+  savedIntros      SavedIntro[]
+  approvedStories  PublishedStory[] @relation("ApprovedBy")
+  userStickers     UserSticker[]    @relation("UserStickers")
+  awardedStickers  UserSticker[]    @relation("AwardedBy")
+  customStickers   CustomStickerDef[]
+  featuredStickers FeaturedSticker[]
+
+  @@index([email])
+  @@index([loginId])
+  @@index([provider, providerId])
+  @@index([createdBy])
+}
+
+// ============================================================
+// 2. 반 관리
+// ============================================================
+
+model ClassRoom {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String  @db.VarChar(100)
+  teacherId String  @db.Uuid
+  teacher   User    @relation("TeacherClassRooms", fields: [teacherId], references: [id])
+  schoolId  String? @db.Uuid
+  school    School? @relation(fields: [schoolId], references: [id])
+  grade     Int?
+  joinCode  String? @unique @db.VarChar(8)
+
+  settings Json    @default("{}")
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  members         ClassMember[]
+  sessions        Session[]
+  publishedStories PublishedStory[]
+
+  @@index([teacherId])
+  @@index([joinCode])
+}
+
+model ClassMember {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String  @db.Uuid
+  user        User    @relation(fields: [userId], references: [id])
+  classId     String  @db.Uuid
+  classRoom   ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
+  role        String  @default("student") @db.VarChar(20)
+  displayName String? @db.VarChar(100)
+  color       String? @db.VarChar(7)
+  orderIndex  Int?
+  joinedAt    DateTime @default(now())
+
+  @@unique([userId, classId])
+  @@index([classId])
+  @@index([userId])
+}
+
+// ============================================================
+// 3. 수업 세션
+// ============================================================
+
+model Session {
+  id      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId String    @db.Uuid
+  classRoom ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  mode    String @db.VarChar(30)
+  title   String? @db.VarChar(200)
+
+  themeData Json
+  settings  Json @default("{}")
+
+  status      String    @default("active") @db.VarChar(20)
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  stories      Story[]
+  userStickers UserSticker[] @relation("SessionStickers")
+
+  @@index([classId])
+  @@index([status])
+}
+
+// ============================================================
+// 4. 이야기
+// ============================================================
+
+model Story {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId String  @db.Uuid
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId    String? @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id])
+
+  sharedIntro String?
+  status      String  @default("writing") @db.VarChar(20)
+  aiCharacter String? @db.VarChar(50)
+  metadata    Json    @default("{}")
+  coverUrl    String? @db.VarChar(500)
+
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  parts          StoryPart[]
+  branchNodes    BranchNode[]
+  illustrations  Illustration[]
+  audioTracks    AudioTrack[]
+  feedbacks      Feedback[]
+  publishedStory PublishedStory?
+  userStickers   UserSticker[]
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+// ============================================================
+// 5. 이야기 파트 (턴별 텍스트)
+// ============================================================
+
+model StoryPart {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId    String  @db.Uuid
+  story      Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  authorId   String? @db.Uuid
+  author     User?   @relation(fields: [authorId], references: [id])
+
+  authorType String @db.VarChar(20)
+  text       String
+  order      Int
+
+  branchNodeId String?     @db.Uuid
+  branchNode   BranchNode? @relation(fields: [branchNodeId], references: [id])
+
+  metadata Json    @default("{}")
+  flagged  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  reactions Reaction[]
+
+  @@index([storyId, order])
+  @@index([authorId])
+}
+
+// ============================================================
+// 6. 분기 모드 (트리 구조)
+// ============================================================
+
+model BranchNode {
+  id       String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId  String      @db.Uuid
+  story    Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  parentId String?     @db.Uuid
+  parent   BranchNode? @relation("BranchTree", fields: [parentId], references: [id])
+  children BranchNode[] @relation("BranchTree")
+
+  depth       Int    @default(0)
+  choices     Json
+  selectedIdx Int?
+  voteResult  Json?
+  status      String @default("voting") @db.VarChar(20)
+
+  createdAt DateTime @default(now())
+
+  storyParts    StoryPart[]
+  votes         Vote[]
+  illustrations Illustration[]
+
+  @@index([storyId])
+  @@index([parentId])
+}
+
+model Vote {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchNodeId String     @db.Uuid
+  branchNode   BranchNode @relation(fields: [branchNodeId], references: [id], onDelete: Cascade)
+  userId       String     @db.Uuid
+  user         User       @relation(fields: [userId], references: [id])
+  choiceIdx    Int
+  comment      String?    @db.VarChar(200)
+  createdAt    DateTime   @default(now())
+
+  @@unique([branchNodeId, userId])
+  @@index([branchNodeId])
+}
+
+// ============================================================
+// 7. 삽화
+// ============================================================
+
+model Illustration {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId      String      @db.Uuid
+  story        Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sceneIndex   Int
+  sceneText    String?
+  style        String      @db.VarChar(50)
+  prompt       String?
+  imageUrl     String      @db.VarChar(500)
+  isCover      Boolean     @default(false)
+  branchNodeId String?     @db.Uuid
+  branchNode   BranchNode? @relation(fields: [branchNodeId], references: [id])
+  createdAt    DateTime    @default(now())
+
+  @@index([storyId])
+}
+
+// ============================================================
+// 8. 오디오 (TTS + BGM)
+// ============================================================
+
+model AudioTrack {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId  String @db.Uuid
+  story    Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  type         String  @db.VarChar(20)
+  voiceStyle   String? @db.VarChar(50)
+  bgmMode      String? @db.VarChar(20)
+  audioUrl     String  @db.VarChar(500)
+  duration     Int?
+  moodTimeline Json?
+  branchPath   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([storyId])
+}
+
+// ============================================================
+// 9. AI 피드백
+// ============================================================
+
+model Feedback {
+  id      String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId String  @db.Uuid
+  story   Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId  String? @db.Uuid
+  user    User?   @relation(fields: [userId], references: [id])
+
+  type    String @db.VarChar(30)
+  content Json
+
+  createdAt DateTime @default(now())
+
+  @@index([storyId])
+}
+
+// ============================================================
+// 10. 반응 이모지
+// ============================================================
+
+model Reaction {
+  id     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  partId String    @db.Uuid
+  part   StoryPart @relation(fields: [partId], references: [id], onDelete: Cascade)
+  userId String    @db.Uuid
+  user   User      @relation(fields: [userId], references: [id])
+  emoji  String    @db.VarChar(10)
+
+  createdAt DateTime @default(now())
+
+  @@unique([partId, userId, emoji])
+  @@index([partId])
+}
+
+// ============================================================
+// 11. 이야기 공개 및 교류
+// ============================================================
+
+model PublishedStory {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storyId    String    @unique @db.Uuid
+  story      Story     @relation(fields: [storyId], references: [id])
+  classId    String    @db.Uuid
+  classRoom  ClassRoom @relation(fields: [classId], references: [id])
+  scope      String    @db.VarChar(20)
+  approvedBy String?   @db.Uuid
+  approver   User?     @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  likeCount  Int       @default(0)
+
+  publishedAt DateTime @default(now())
+
+  comments Comment[]
+
+  @@index([classId])
+  @@index([scope])
+}
+
+model Comment {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publishedId String         @db.Uuid
+  published   PublishedStory @relation(fields: [publishedId], references: [id], onDelete: Cascade)
+  userId      String         @db.Uuid
+  user        User           @relation(fields: [userId], references: [id])
+  text        String         @db.VarChar(200)
+  flagged     Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([publishedId])
+}
+
+// ============================================================
+// 12. 도입부 저장소 (교사용)
+// ============================================================
+
+model SavedIntro {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacherId String  @db.Uuid
+  teacher   User    @relation(fields: [teacherId], references: [id])
+  title     String? @db.VarChar(200)
+  themeData Json?
+  introText String
+  grade     Int?
+  usedCount Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
+}
+
+// ============================================================
+// 13. 칭찬스티커 시스템
+// ============================================================
+
+model StickerDef {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String  @unique @db.VarChar(50)
+  name        String  @db.VarChar(100)
+  emoji       String  @db.VarChar(10)
+  description String  @db.VarChar(300)
+  category    String  @db.VarChar(20)
+  tier        String  @default("normal") @db.VarChar(20)
+  condition   Json?
+  sortOrder   Int     @default(0)
+  isBuiltIn   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  userStickers UserSticker[]
+
+  @@index([category])
+}
+
+model CustomStickerDef {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacherId   String  @db.Uuid
+  teacher     User    @relation(fields: [teacherId], references: [id])
+  name        String  @db.VarChar(100)
+  emoji       String  @db.VarChar(10)
+  description String? @db.VarChar(300)
+  tier        String  @default("legendary") @db.VarChar(20)
+
+  createdAt DateTime @default(now())
+
+  userStickers UserSticker[]
+
+  @@index([teacherId])
+}
+
+model UserSticker {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String            @db.Uuid
+  user             User              @relation("UserStickers", fields: [userId], references: [id], onDelete: Cascade)
+
+  stickerDefId     String?           @db.Uuid
+  stickerDef       StickerDef?       @relation(fields: [stickerDefId], references: [id])
+  customStickerId  String?           @db.Uuid
+  customStickerDef CustomStickerDef? @relation(fields: [customStickerId], references: [id])
+
+  awardedBy        String?           @db.Uuid
+  awarder          User?             @relation("AwardedBy", fields: [awardedBy], references: [id])
+  awardComment     String?           @db.VarChar(200)
+
+  relatedStoryId   String?           @db.Uuid
+  relatedStory     Story?            @relation(fields: [relatedStoryId], references: [id])
+  relatedSessionId String?           @db.Uuid
+  relatedSession   Session?          @relation("SessionStickers", fields: [relatedSessionId], references: [id])
+
+  isNew    Boolean  @default(true)
+  earnedAt DateTime @default(now())
+
+  featuredStickers FeaturedSticker[]
+
+  @@unique([userId, stickerDefId])
+  @@index([userId])
+  @@index([userId, isNew])
+}
+
+model FeaturedSticker {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String      @db.Uuid
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stickerId String      @db.Uuid
+  sticker   UserSticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)
+  position  Int
+  setAt     DateTime    @default(now())
+
+  @@unique([userId, position])
+  @@index([userId])
+}
+
+// ============================================================
+// 14. Refresh Token
+// ============================================================
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @db.VarChar(500)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}

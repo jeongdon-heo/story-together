@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx nest build:*)",
+      "Bash(docker compose:*)",
+      "Bash(npx next build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir C:claudestory-togetherbackendsrc)",
+      "Bash(cmd /c \"dir C:\\\\claude\\\\story-together\\\\backend\\\\src\")",
+      "Bash(cmd /c \"dir C:\\\\claude\\\\story-together\")",
+      "Bash(cmd /c \"dir /b C:\\\\claude\\\\story-together 2>&1\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\\\claude\\\\story-together'' -Force | Select-Object Name, Length, LastWriteTime\")",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell -NoProfile -Command \"Set-Location ''C:\\\\claude\\\\story-together\\\\backend''; $env:PATH = $env:PATH + '';C:\\\\Program Files\\\\nodejs''; npm install @nestjs/websockets @nestjs/platform-socket.io socket.io\")",
+      "Bash(powershell -NoProfile -Command \"Set-Location ''C:\\\\claude\\\\story-together\\\\backend''; npm install ''@nestjs/websockets@^10.0.0'' ''@nestjs/platform-socket.io@^10.0.0'' socket.io 2>&1\")",
+      "Bash(powershell -NoProfile -Command \"Set-Location ''C:\\\\claude\\\\story-together\\\\backend''; npm install ''@nestjs/websockets@^10.0.0'' ''@nestjs/platform-socket.io@^10.0.0'' socket.io --legacy-peer-deps 2>&1\")",
+      "Bash(powershell -NoProfile -Command:*)",
+      "Bash(powershell -NoProfile:*)",
+      "Bash(dir:*)",
+      "Bash(echo:*)",
+      "Bash(cmd /c \"dir C:\\\\claude\\\\story-together\\\\backend\\\\src\\\\ai\")",
+      "Bash(cmd /c \"type C:\\\\claude\\\\story-together\\\\docs\\\\ai-prompts.md\")",
+      "Bash(cmd /c:*)",
+      "Bash(node -e \"const {execSync}=require\\(''child_process''\\); try{execSync\\(''node_modules/.bin/tsc --noEmit'',{stdio:''pipe''}\\)}catch\\(e\\){console.log\\(e.stdout?.toString\\(\\)||''''\\); console.log\\(e.stderr?.toString\\(\\)||''''\\)}\")",
+      "Bash(git init:*)",
+      "Bash(git -C \"C:/claude/story-together\" status --short)",
+      "Bash(git --version:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

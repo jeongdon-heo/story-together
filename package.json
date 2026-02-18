@@ -1,0 +1,15 @@
+{
+  "name": "story-together",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:db": "docker compose up -d",
+    "dev:db:down": "docker compose down",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:seed": "cd backend && npx prisma db seed",
+    "db:studio": "cd backend && npx prisma studio",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+  }
+}
