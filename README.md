@@ -80,7 +80,7 @@ AI와 초등학생이 번갈아 가며 동화를 만드는 **협업 글쓰기 �
 ### 1. 저장소 복제
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/jeongdon-heo/story-together.git
 cd story-together
 ```
 
