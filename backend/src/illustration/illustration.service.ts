@@ -28,7 +28,7 @@ export const STYLE_SUFFIXES: Record<string, string> = {
 
 @Injectable()
 export class IllustrationService {
-  private genai: GoogleGenAI;
+  private genai: GoogleGenAI | null = null;
   private readonly logger = new Logger(IllustrationService.name);
 
   constructor(
@@ -36,9 +36,12 @@ export class IllustrationService {
     private aiService: AiService,
     private configService: ConfigService,
   ) {
-    this.genai = new GoogleGenAI({
-      apiKey: this.configService.get<string>('GEMINI_API_KEY') || '',
-    });
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (apiKey) {
+      this.genai = new GoogleGenAI({ apiKey });
+    } else {
+      this.logger.warn('GEMINI_API_KEY not set — illustration generation will fail');
+    }
   }
 
   // 이야기 장면 분석
@@ -174,6 +177,9 @@ export class IllustrationService {
       this.logger.log(`이미지 프롬프트: ${finalPrompt}`);
 
       // 3. Gemini 이미지 생성
+      if (!this.genai) {
+        throw new Error('Gemini client not initialized (no API key)');
+      }
       const response = await this.genai.models.generateContent({
         model: 'gemini-2.0-flash-exp-image-generation',
         contents: finalPrompt,

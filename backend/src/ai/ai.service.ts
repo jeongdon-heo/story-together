@@ -27,14 +27,17 @@ export interface ContentCheck {
 
 @Injectable()
 export class AiService {
-  private client: GoogleGenAI;
+  private client: GoogleGenAI | null = null;
   private readonly logger = new Logger(AiService.name);
   private readonly model = 'gemini-2.0-flash';
 
   constructor(private configService: ConfigService) {
-    this.client = new GoogleGenAI({
-      apiKey: this.configService.get<string>('GEMINI_API_KEY') || '',
-    });
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (apiKey) {
+      this.client = new GoogleGenAI({ apiKey });
+    } else {
+      this.logger.warn('GEMINI_API_KEY not set — AI features will use fallback responses');
+    }
   }
 
   private readonly fallbackThemes: Theme[] = [
@@ -525,6 +528,9 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     systemPrompt: string,
     messages: StoryMessage[],
   ): Promise<string> {
+    if (!this.client) {
+      throw new Error('Gemini client not initialized (no API key)');
+    }
     try {
       const response = await this.client.models.generateContent({
         model: this.model,
@@ -548,6 +554,9 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     systemPrompt: string,
     userMessage: string,
   ): Promise<T> {
+    if (!this.client) {
+      throw new Error('Gemini client not initialized (no API key)');
+    }
     try {
       const response = await this.client.models.generateContent({
         model: this.model,
