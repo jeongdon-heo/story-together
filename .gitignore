@@ -37,6 +37,9 @@ coverage/
 
 # Misc
 *.tsbuildinfo
+*_out.txt
+run_*.ps1
+tsc_output/
 
 # Generated uploads (TTS audio, illustrations, exports)
 backend/uploads/

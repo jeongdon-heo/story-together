@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useAuth } from '../../../hooks/useAuth';
+import { useAuthStore } from '../../../stores/auth-store';
 
 const loginSchema = z.object({
   loginId: z.string().min(1, '아이디를 입력하세요'),
@@ -39,7 +40,14 @@ export default function LoginPage() {
     setError('');
     try {
       await login(data);
-      router.push('/');
+      const { user } = useAuthStore.getState();
+      if (user?.role === 'teacher') {
+        router.push('/teacher');
+      } else if (user?.role === 'student') {
+        router.push('/student');
+      } else {
+        router.push('/student');
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.message || '로그인에 실패했습니다',
