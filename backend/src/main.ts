@@ -22,6 +22,8 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://localhost:3002',
       'http://localhost:3003',
+      'https://story-together.vercel.app',
+      'https://story-together-git-master-jeongdons-projects.vercel.app',
     ],
     credentials: true,
   });
