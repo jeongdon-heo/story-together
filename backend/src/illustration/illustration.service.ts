@@ -5,9 +5,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const STYLE_SUFFIXES: Record<string, string> = {
   crayon:
@@ -26,7 +28,7 @@ export const STYLE_SUFFIXES: Record<string, string> = {
 
 @Injectable()
 export class IllustrationService {
-  private openai: OpenAI;
+  private genai: GoogleGenAI;
   private readonly logger = new Logger(IllustrationService.name);
 
   constructor(
@@ -34,8 +36,8 @@ export class IllustrationService {
     private aiService: AiService,
     private configService: ConfigService,
   ) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY') || '',
+    this.genai = new GoogleGenAI({
+      apiKey: this.configService.get<string>('GEMINI_API_KEY') || '',
     });
   }
 
@@ -157,7 +159,7 @@ export class IllustrationService {
     branchNodeId?: string,
   ) {
     try {
-      // 1. 장면 → 영문 이미지 프롬프트 생성 (Claude)
+      // 1. 장면 → 영문 이미지 프롬프트 생성 (Gemini text)
       const basePrompt = await this.aiService.generateImagePrompt({
         text: sceneText,
         characters: [],
@@ -171,16 +173,46 @@ export class IllustrationService {
 
       this.logger.log(`이미지 프롬프트: ${finalPrompt}`);
 
-      // 3. DALL-E 3 이미지 생성
-      const imageResponse = await this.openai.images.generate({
-        model: 'dall-e-3',
-        prompt: finalPrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
+      // 3. Gemini 이미지 생성
+      const response = await this.genai.models.generateContent({
+        model: 'gemini-2.0-flash-exp-image-generation',
+        contents: finalPrompt,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       });
 
-      const imageUrl = (imageResponse.data as Array<{ url?: string }>)[0]?.url || '';
+      let imageUrl = '';
+
+      // 응답에서 base64 이미지 추출
+      const candidates = response.candidates;
+      if (candidates && candidates.length > 0) {
+        const parts = candidates[0].content?.parts;
+        if (parts) {
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              // base64 이미지를 파일로 저장
+              const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
+              if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+              }
+
+              const filename = `${jobId}.png`;
+              const filePath = path.join(uploadsDir, filename);
+              const buffer = Buffer.from(part.inlineData.data, 'base64');
+              fs.writeFileSync(filePath, buffer);
+
+              imageUrl = `/uploads/illustrations/${filename}`;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!imageUrl) {
+        this.logger.warn(`이미지 생성 응답에 이미지 없음, jobId=${jobId}`);
+        imageUrl = '';
+      }
 
       // 4. DB 저장
       await this.prisma.illustration.create({

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI } from '@google/genai';
 import { buildSystemPrompt, GRADE_CONFIG } from './ai-config';
 
 export interface StoryMessage {
@@ -27,15 +27,24 @@ export interface ContentCheck {
 
 @Injectable()
 export class AiService {
-  private client: Anthropic;
+  private client: GoogleGenAI;
   private readonly logger = new Logger(AiService.name);
-  private readonly model = 'claude-sonnet-4-20250514';
+  private readonly model = 'gemini-2.0-flash';
 
   constructor(private configService: ConfigService) {
-    this.client = new Anthropic({
-      apiKey: this.configService.get<string>('ANTHROPIC_API_KEY') || '',
+    this.client = new GoogleGenAI({
+      apiKey: this.configService.get<string>('GEMINI_API_KEY') || '',
     });
   }
+
+  private readonly fallbackThemes: Theme[] = [
+    { emoji: '🌲', label: '마법의 숲', desc: '신비한 동물들이 사는 마법의 숲에서 벌어지는 모험' },
+    { emoji: '🐠', label: '바다 밑 비밀', desc: '깊은 바다 속 숨겨진 왕국을 발견하는 이야기' },
+    { emoji: '🐉', label: '하늘을 나는 용', desc: '아기 용과 친구가 되어 하늘을 여행하는 이야기' },
+    { emoji: '🏰', label: '사라진 왕국', desc: '오래전 사라진 왕국의 비밀을 찾아 떠나는 탐험' },
+    { emoji: '⭐', label: '별빛 요정', desc: '밤하늘에서 내려온 별빛 요정과의 특별한 만남' },
+    { emoji: '🎪', label: '신기한 서커스', desc: '마법으로 가득한 신비한 서커스단의 이야기' },
+  ];
 
   // 테마 6개 생성
   async generateThemes(grade: number): Promise<Theme[]> {
@@ -49,8 +58,22 @@ export class AiService {
 장르를 다양하게 섞어주세요: 판타지, 모험, 일상, 과학, 우정, 자연 등.
 ${grade}학년이 흥미를 가질 만한 주제여야 합니다.`;
 
-    return this.callClaudeJSON<Theme[]>(systemPrompt, '동화 주제를 만들어주세요.');
+    try {
+      return await this.callGeminiJSON<Theme[]>(systemPrompt, '동화 주제를 만들어주세요.');
+    } catch (error) {
+      this.logger.warn('테마 생성 API 호출 실패, 기본 테마 사용:', error);
+      return this.fallbackThemes;
+    }
   }
+
+  private readonly fallbackStoryStarts: Record<string, string> = {
+    '마법의 숲': '깊은 산속에 아무도 모르는 작은 숲이 있었어요. 이 숲에 들어가면 나뭇잎들이 반짝반짝 빛나고, 다람쥐들이 사람처럼 말을 했어요. 어느 날, 호기심 많은 아이 하늘이가 학교에서 돌아오는 길에 처음 보는 오솔길을 발견했어요. 길 끝에서 작은 토끼 한 마리가 "도와줘!"라고 외치고 있었어요.',
+    '바다 밑 비밀': '푸른 바닷가 마을에 사는 소라는 수영을 아주 좋아하는 아이였어요. 어느 여름날, 소라가 바다에서 헤엄을 치다가 반짝이는 조개를 발견했어요. 조개를 귀에 대자 "우리 왕국을 찾아줘..."라는 작은 목소리가 들렸어요. 그 순간 소라의 발밑에서 커다란 물방울이 소라를 감싸기 시작했어요.',
+    '하늘을 나는 용': '구름 위 아주 높은 곳에 아기 용 뭉치가 살고 있었어요. 뭉치는 다른 용들과 달리 불을 뿜는 대신 무지개를 뿜었어요. 친구들은 뭉치를 놀렸지만, 뭉치는 괜찮았어요. 그러던 어느 날, 산 아래 마을에서 "살려주세요!"라는 외침이 들려왔어요.',
+    '사라진 왕국': '도서관에서 오래된 책을 읽던 지호는 책 사이에 끼어 있는 빛바랜 지도를 발견했어요. 지도에는 "용기 있는 자만이 찾을 수 있는 하늘빛 왕국"이라고 적혀 있었어요. 지호가 지도를 펼치자 글자들이 하나둘씩 빛나기 시작했어요. 그리고 지도 위의 길이 천천히 움직이기 시작했어요.',
+    '별빛 요정': '밤마다 별을 세는 것이 취미인 수아는 옥상에서 망원경으로 하늘을 바라보고 있었어요. 그때 유난히 밝은 별 하나가 슝~ 하고 떨어졌어요. 수아가 깜짝 놀라 뒤뜰로 달려가 보니, 손바닥만 한 작은 요정이 날개를 다친 채 앉아 있었어요. "안녕? 나는 별빛 요정 루미야. 부탁이 하나 있어."',
+    '신기한 서커스': '어느 날 아침, 마을 광장에 커다란 천막이 나타났어요. 간판에는 "한 번뿐인 신기한 서커스"라고 적혀 있었어요. 민준이가 천막 안으로 들어가자 눈이 휘둥그레졌어요. 토끼가 모자에서 마술사를 꺼내고, 곰이 외줄 위에서 춤을 추고 있었어요. 그때 단장님이 다가와 말했어요. "특별한 손님이 왔구나! 우리에게 도움이 필요하단다."',
+  };
 
   // 이야기 시작 생성
   async generateStoryStart(
@@ -68,10 +91,24 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 - 학생이 흥미를 가지고 이어쓸 수 있는 상황을 만들어주세요.
 - ${gc.sentenceLen}으로 작성하세요.`;
 
-    return this.callClaudeText(systemPrompt, [
-      { role: 'user', content: userMessage },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: userMessage },
+      ]);
+    } catch (error) {
+      this.logger.warn('이야기 시작 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      return this.fallbackStoryStarts[theme.label]
+        || `옛날 옛적에 아주 먼 곳에 작은 마을이 있었어요. 그 마을에는 ${theme.label}에 대한 신비한 이야기가 전해지고 있었어요. 어느 날, 용감한 아이가 그 비밀을 알아내기로 했어요. 과연 어떤 모험이 기다리고 있을까요?`;
+    }
   }
+
+  private readonly fallbackContinuations: string[] = [
+    '그런데 그때, 저 멀리서 이상한 소리가 들려왔어요. 처음에는 바람 소리인가 싶었지만, 점점 가까이 다가오는 그 소리는 누군가 노래를 부르는 것 같았어요. 소리를 따라가 보니 커다란 나무 뒤에 작은 문이 하나 숨겨져 있었어요. 문 앞에는 "용기 있는 자만 열 수 있음"이라고 적힌 팻말이 놓여 있었어요.',
+    '바로 그 순간, 하늘에서 반짝이는 무언가가 떨어졌어요. 가까이 다가가 보니 그것은 작은 유리병이었고, 안에 빛나는 쪽지가 들어 있었어요. 쪽지에는 이렇게 적혀 있었어요. "세 가지 수수께끼를 풀면 소원을 이루어 줄게." 첫 번째 수수께끼는 벌써 나타나기 시작했어요.',
+    '그때 갑자기 땅이 살짝 흔들리더니, 발밑에서 작은 길이 나타났어요. 길은 꽃잎으로 덮여 있었고, 한 걸음 내딛을 때마다 은은한 빛이 났어요. 길을 따라 걷자 아무도 본 적 없는 신기한 장소가 펼쳐졌어요. 그곳에서 뜻밖의 친구를 만나게 되었어요.',
+    '조금 더 앞으로 나아가자, 길이 둘로 갈라져 있었어요. 왼쪽 길에서는 달콤한 꽃향기가 나고, 오른쪽 길에서는 신나는 음악 소리가 들렸어요. 어느 쪽으로 가야 할지 고민하고 있을 때, 나비 한 마리가 날아와 한쪽 길을 알려주는 것 같았어요.',
+    '이야기 속 주인공은 떨리는 마음으로 한 발짝 더 나아갔어요. 그러자 눈앞에 놀라운 광경이 펼쳐졌어요. 지금까지 한 번도 본 적 없는 아름다운 곳이었어요. 하지만 자세히 보니 무언가 이상한 점이 있었어요. 여기서부터 진짜 모험이 시작되는 것 같았어요.',
+  ];
 
   // 이야기 이어쓰기
   async continueStory(
@@ -85,8 +122,26 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 학생이 쓴 내용을 존중하고 발전시키세요.
 새로운 사건이나 반전을 추가해서 학생이 계속 이어쓸 수 있게 해주세요.`;
 
-    return this.callClaudeText(systemPrompt, previousParts);
+    try {
+      return await this.callGeminiText(systemPrompt, previousParts);
+    } catch (error) {
+      this.logger.warn('이야기 이어쓰기 API 호출 실패, 기본 텍스트 사용:', error);
+      const idx = previousParts.length % this.fallbackContinuations.length;
+      return this.fallbackContinuations[idx];
+    }
   }
+
+  private readonly fallbackEndings: string[] = [
+    '그리하여 모든 문제가 해결되었어요. 주인공은 모험을 통해 용기가 무엇인지 알게 되었고, 새로 사귄 친구들과 함께 웃으며 집으로 돌아왔어요. 그날 밤, 별들이 유난히 밝게 빛났어요. 마치 "잘했어!"라고 말해주는 것 같았지요. 그리고 그 모험의 기억은 마음속에서 영원히 빛나는 보물이 되었답니다.',
+    '그래서 모두 함께 힘을 모은 덕분에 마침내 해낼 수 있었어요. 처음에는 두려웠지만, 포기하지 않고 끝까지 노력한 보람이 있었지요. 주인공은 깨달았어요. 진짜 마법은 특별한 힘이 아니라 서로를 믿는 마음에서 온다는 것을요. 모두가 행복한 미소를 지으며 새로운 하루를 맞이했답니다.',
+    '그리하여 긴 모험이 끝나고, 주인공은 다시 평화로운 일상으로 돌아왔어요. 하지만 전과는 무언가 달라져 있었어요. 세상이 조금 더 따뜻하고 아름답게 보였거든요. 모험에서 만난 친구들의 말이 떠올랐어요. "넌 할 수 있어." 그 말은 앞으로도 오래오래 힘이 되어줄 거예요.',
+  ];
+
+  private readonly fallbackHints: Hint[] = [
+    { text: '새로운 친구를 만나게 해보세요', direction: '만남' },
+    { text: '숨겨진 비밀을 발견해보세요', direction: '발견' },
+    { text: '위기를 용기로 극복해보세요', direction: '모험' },
+  ];
 
   // 결말 생성
   async generateEnding(
@@ -102,7 +157,13 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 - 따뜻하고 희망적인 결말을 만들어주세요.
 - "그리하여" 또는 "그래서" 등으로 자연스럽게 끝맺으세요.`;
 
-    return this.callClaudeText(systemPrompt, previousParts);
+    try {
+      return await this.callGeminiText(systemPrompt, previousParts);
+    } catch (error) {
+      this.logger.warn('결말 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      const idx = previousParts.length % this.fallbackEndings.length;
+      return this.fallbackEndings[idx];
+    }
   }
 
   // 힌트 생성
@@ -129,10 +190,15 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
       { role: 'user', content: '힌트를 주세요.' },
     ];
 
-    return this.callClaudeJSON<Hint[]>(
-      systemPrompt,
-      messages.map((m) => m.content).join('\n\n'),
-    );
+    try {
+      return await this.callGeminiJSON<Hint[]>(
+        systemPrompt,
+        messages.map((m) => m.content).join('\n\n'),
+      );
+    } catch (error) {
+      this.logger.warn('힌트 생성 API 호출 실패, 기본 힌트 사용:', error);
+      return this.fallbackHints;
+    }
   }
 
   // 문장 시작 도우미
@@ -149,10 +215,15 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 현재 이야기의 분위기와 상황에 맞는 표현이어야 합니다.
 예: "그때 갑자기...", "그런데 알고 보니...", "바로 그 순간..."`;
 
-    return this.callClaudeJSON<string[]>(
-      systemPrompt,
-      previousParts.map((m) => m.content).join('\n\n'),
-    );
+    try {
+      return await this.callGeminiJSON<string[]>(
+        systemPrompt,
+        previousParts.map((m) => m.content).join('\n\n'),
+      );
+    } catch (error) {
+      this.logger.warn('문장 시작 도우미 API 호출 실패, 기본 표현 사용:', error);
+      return ['그때 갑자기...', '그런데 알고 보니...', '바로 그 순간...', '그래서 용기를 내어...'].slice(0, count);
+    }
   }
 
   // 콘텐츠 검수
@@ -173,7 +244,12 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 주의: 동화적 갈등(용과 싸운다, 괴물을 물리친다 등)은 허용합니다.
 판타지적 요소와 실제 폭력을 구분하세요.`;
 
-    return this.callClaudeJSON<ContentCheck>(systemPrompt, text);
+    try {
+      return await this.callGeminiJSON<ContentCheck>(systemPrompt, text);
+    } catch (error) {
+      this.logger.warn('콘텐츠 검수 API 호출 실패, 기본 통과 처리:', error);
+      return { safe: true };
+    }
   }
 
   // 갈림길 선택지 생성 (분기 모드)
@@ -196,10 +272,19 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 - 흥미롭고 설레는 선택지여야 함
 - 나쁜 결과를 암시하는 선택지 금지`;
 
-    return this.callClaudeJSON<Array<{ index: number; text: string; description: string }>>(
-      systemPrompt,
-      previousParts.map((m) => m.content).join('\n\n') + '\n\n이 이야기에서 어떤 일이 일어날지 갈림길을 만들어주세요.',
-    );
+    try {
+      return await this.callGeminiJSON<Array<{ index: number; text: string; description: string }>>(
+        systemPrompt,
+        previousParts.map((m) => m.content).join('\n\n') + '\n\n이 이야기에서 어떤 일이 일어날지 갈림길을 만들어주세요.',
+      );
+    } catch (error) {
+      this.logger.warn('갈림길 선택지 생성 API 호출 실패, 기본 선택지 사용:', error);
+      return [
+        { index: 0, text: '신비한 동굴로 들어간다', description: '탐험' },
+        { index: 1, text: '새로운 친구를 따라간다', description: '만남' },
+        { index: 2, text: '비밀 편지를 열어본다', description: '발견' },
+      ].slice(0, choiceCount);
+    }
   }
 
   // 선택된 갈래 이야기 생성 (분기 모드)
@@ -215,10 +300,15 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 이 방향으로 이야기를 이어주세요.
 선택의 결과를 자연스럽게 보여주고, 다음 단계로 이어질 수 있게 끝맺으세요.`;
 
-    return this.callClaudeText(systemPrompt, [
-      ...previousParts,
-      { role: 'user', content: `"${selectedChoice.text}" 방향으로 이야기를 이어주세요.` },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        ...previousParts,
+        { role: 'user', content: `"${selectedChoice.text}" 방향으로 이야기를 이어주세요.` },
+      ]);
+    } catch (error) {
+      this.logger.warn('갈래 이야기 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      return `"${selectedChoice.text}" 쪽을 선택한 주인공은 떨리는 마음으로 앞으로 나아갔어요. 처음에는 조금 무서웠지만, 한 걸음 한 걸음 나아갈수록 점점 신기한 것들이 보이기 시작했어요. 그리고 저 앞에서 반짝이는 무언가가 주인공을 기다리고 있었어요.`;
+    }
   }
 
   // "만약에" 이야기 생성 (탈락한 선택지)
@@ -235,10 +325,15 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 이 방향을 선택했다면 어떤 일이 벌어졌을지 짧게 (3~4문장) 써주세요.
 "만약에 이 길을 선택했다면..." 또는 "다른 선택을 했더라면..."으로 시작하세요.`;
 
-    return this.callClaudeText(systemPrompt, [
-      ...previousParts,
-      { role: 'user', content: `만약에 "${rejectedChoice.text}"를 선택했다면 어떻게 됐을까요?` },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        ...previousParts,
+        { role: 'user', content: `만약에 "${rejectedChoice.text}"를 선택했다면 어떻게 됐을까요?` },
+      ]);
+    } catch (error) {
+      this.logger.warn('"만약에" 이야기 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      return `만약에 "${rejectedChoice.text}" 쪽을 선택했다면 어떻게 됐을까요? 아마 전혀 다른 모험이 펼쳐졌을 거예요. 새로운 장소에서 새로운 친구를 만나고, 예상치 못한 놀라운 일이 벌어졌을지도 몰라요. 하지만 그건 또 다른 이야기랍니다.`;
+    }
   }
 
   // 도입부 생성 (같은 시작 모드)
@@ -265,9 +360,14 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 
 본문만 출력하세요. 제목이나 부가 설명은 포함하지 마세요.`;
 
-    return this.callClaudeText(systemPrompt, [
-      { role: 'user', content: `"${theme.label}" 주제로 도입부를 작성해주세요.` },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: `"${theme.label}" 주제로 도입부를 작성해주세요.` },
+      ]);
+    } catch (error) {
+      this.logger.warn('도입부 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      return `옛날 옛적에, ${theme.label}${theme.label.endsWith('의') ? '' : '과(와)'} 관련된 신비한 이야기가 전해지는 마을이 있었어요. 그 마을에는 호기심 많은 아이들이 살고 있었는데, 어느 날 아주 특별한 일이 벌어졌어요. 아무도 예상하지 못한 일이 일어나려 하고 있었지요. 과연 무슨 일이 기다리고 있을까요?`;
+    }
   }
 
   // 학생 이야기 비교 피드백 (같은 시작 모드)
@@ -290,9 +390,15 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 ${grade}학년 학생들이 이해할 수 있는 쉽고 친근한 말투로 작성하세요.
 3~4문단, 200자 이내로 작성하세요.`;
 
-    return this.callClaudeText(systemPrompt, [
-      { role: 'user', content: storiesText },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: storiesText },
+      ]);
+    } catch (error) {
+      this.logger.warn('이야기 비교 API 호출 실패, 기본 피드백 사용:', error);
+      const names = studentStories.map((s) => s.name).join(', ');
+      return `${names} 친구들이 같은 시작에서 출발해 각자 멋진 이야기를 만들었어요! 모두 풍부한 상상력으로 자기만의 특별한 이야기를 완성했네요. 같은 시작인데도 이렇게 다양한 이야기가 나올 수 있다니 정말 놀랍지요? 모두 정말 잘했어요!`;
+    }
   }
 
   // 분위기 분석 (BGM 매핑용)
@@ -324,10 +430,15 @@ mood 값 설명:
 - victory: 승리, 해결
 - epilogue: 결말, 마무리`;
 
-    return this.callClaudeJSON<{ mood: string; intensity: number; suggestedBgm: string }>(
-      systemPrompt,
-      text,
-    );
+    try {
+      return await this.callGeminiJSON<{ mood: string; intensity: number; suggestedBgm: string }>(
+        systemPrompt,
+        text,
+      );
+    } catch (error) {
+      this.logger.warn('분위기 분석 API 호출 실패, 기본값 사용:', error);
+      return { mood: 'peaceful', intensity: 0.5, suggestedBgm: 'calm acoustic' };
+    }
   }
 
   // 삽화 장면 분석
@@ -357,17 +468,26 @@ mood 값 설명:
 이야기 흐름 순서대로 배치하세요.
 partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
 
-    return this.callClaudeJSON<Array<{
-      index: number;
-      text: string;
-      characters: string[];
-      setting: string;
-      mood: string;
-      partOrder: number;
-    }>>(systemPrompt, storyText);
+    try {
+      return await this.callGeminiJSON<Array<{
+        index: number;
+        text: string;
+        characters: string[];
+        setting: string;
+        mood: string;
+        partOrder: number;
+      }>>(systemPrompt, storyText);
+    } catch (error) {
+      this.logger.warn('삽화 장면 분석 API 호출 실패, 기본 장면 사용:', error);
+      return [
+        { index: 0, text: '이야기의 시작 장면', characters: ['주인공'], setting: '마을', mood: 'peaceful', partOrder: 1 },
+        { index: 1, text: '모험이 시작되는 장면', characters: ['주인공'], setting: '숲', mood: 'adventure', partOrder: 2 },
+        { index: 2, text: '이야기의 절정 장면', characters: ['주인공'], setting: '신비한 장소', mood: 'magical', partOrder: 3 },
+      ];
+    }
   }
 
-  // 이미지 프롬프트 생성 (영문, DALL-E 3용)
+  // 이미지 프롬프트 생성 (영문, 이미지 생성용)
   async generateImagePrompt(scene: {
     text: string;
     characters: string[];
@@ -389,59 +509,64 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
 배경: ${scene.setting}
 분위기: ${scene.mood}`;
 
-    return this.callClaudeText(systemPrompt, [
-      { role: 'user', content: userMessage },
-    ]);
+    try {
+      return await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: userMessage },
+      ]);
+    } catch (error) {
+      this.logger.warn('이미지 프롬프트 생성 API 호출 실패, 기본 프롬프트 사용:', error);
+      return `A cheerful children's book illustration showing ${scene.characters.join(' and ')} in ${scene.setting}. The scene depicts ${scene.text}. Warm and friendly atmosphere with bright colors.`;
+    }
   }
 
   // --- 헬퍼 ---
 
-  private async callClaudeText(
+  private async callGeminiText(
     systemPrompt: string,
     messages: StoryMessage[],
   ): Promise<string> {
     try {
-      const response = await this.client.messages.create({
+      const response = await this.client.models.generateContent({
         model: this.model,
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
+        contents: messages.map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
         })),
+        config: {
+          systemInstruction: systemPrompt,
+        },
       });
 
-      return response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('');
+      return response.text || '';
     } catch (error) {
-      this.logger.error('Claude API 호출 실패:', error);
+      this.logger.error('Gemini API 호출 실패:', error);
       throw error;
     }
   }
 
-  private async callClaudeJSON<T>(
+  private async callGeminiJSON<T>(
     systemPrompt: string,
     userMessage: string,
   ): Promise<T> {
     try {
-      const response = await this.client.messages.create({
+      const response = await this.client.models.generateContent({
         model: this.model,
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userMessage }],
+          },
+        ],
+        config: {
+          systemInstruction: systemPrompt,
+        },
       });
 
-      const text = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('');
-
+      const text = response.text || '';
       const clean = text.replace(/```json|```/g, '').trim();
       return JSON.parse(clean) as T;
     } catch (error) {
-      this.logger.error('Claude API JSON 파싱 실패:', error);
+      this.logger.error('Gemini API JSON 파싱 실패:', error);
       throw error;
     }
   }
