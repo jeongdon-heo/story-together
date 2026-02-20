@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator';
 import {
   IsInt,
   IsString,
@@ -121,6 +122,7 @@ export class AiController {
     private prisma: PrismaService,
   ) {}
 
+  @Public()
   @Get('status')
   getStatus() {
     return { data: this.aiService.getStatus() };
