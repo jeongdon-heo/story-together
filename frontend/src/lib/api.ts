@@ -1,15 +1,21 @@
 import axios from 'axios';
 
-export function getBaseURL() {
-  // NEXT_PUBLIC_API_URL은 빌드 시 JS에 임베드됨
-  // Vercel: https://story-together-production.up.railway.app → /api 붙여서 직접 호출
-  // 로컬: http://localhost:4000 → /api 붙여서 직접 호출
-  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  return raw.endsWith('/api') ? raw : raw + '/api';
+export function getBaseURL(): string {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  let base = envUrl && envUrl.length > 0 ? envUrl : 'http://localhost:4000';
+  // 항상 /api로 끝나도록 보장
+  base = base.replace(/\/+$/, ''); // 후행 슬래시 제거
+  if (!base.endsWith('/api')) {
+    base = base + '/api';
+  }
+  return base;
 }
 
+// 빌드 시 인라인 최적화 방지를 위해 즉시 계산
+const API_BASE_URL = getBaseURL();
+
 const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -92,7 +98,7 @@ api.interceptors.response.use(
 
     try {
       const { data } = await axios.post(
-        `${getBaseURL()}/auth/refresh`,
+        `${API_BASE_URL}/auth/refresh`,
         { refreshToken },
       );
 
