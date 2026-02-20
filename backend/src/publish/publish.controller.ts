@@ -37,7 +37,7 @@ export class PublishController {
   @HttpCode(HttpStatus.CREATED)
   async publish(@CurrentUser() user: any, @Body() dto: PublishDto) {
     const data = await this.publishService.publish(
-      user.userId,
+      user.id,
       dto.storyId,
       dto.scope || 'class',
     );
@@ -48,14 +48,14 @@ export class PublishController {
   @Patch('publish/:id/approve')
   @Roles('teacher')
   async approve(@CurrentUser() user: any, @Param('id') id: string) {
-    const data = await this.publishService.approve(user.userId, id);
+    const data = await this.publishService.approve(user.id, id);
     return { data };
   }
 
   @Patch('publish/:id/reject')
   @Roles('teacher')
   async reject(@CurrentUser() user: any, @Param('id') id: string) {
-    const data = await this.publishService.reject(user.userId, id);
+    const data = await this.publishService.reject(user.id, id);
     return { data };
   }
 
@@ -63,14 +63,14 @@ export class PublishController {
   @Get('publish/pending')
   @Roles('teacher')
   async getPending(@CurrentUser() user: any) {
-    const data = await this.publishService.getPendingApproval(user.userId);
+    const data = await this.publishService.getPendingApproval(user.id);
     return { data };
   }
 
   // ─── 내가 공개한 이야기 목록 ──────────────────────────────────
   @Get('publish/my')
   async getMyPublished(@CurrentUser() user: any) {
-    const data = await this.publishService.getMyPublished(user.userId);
+    const data = await this.publishService.getMyPublished(user.id);
     return { data };
   }
 
@@ -125,7 +125,7 @@ export class PublishController {
     @Param('id') id: string,
     @Body() dto: CommentDto,
   ) {
-    const data = await this.publishService.addComment(user.userId, id, dto.text);
+    const data = await this.publishService.addComment(user.id, id, dto.text);
     return { data };
   }
 }

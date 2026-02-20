@@ -96,20 +96,20 @@ export class StickerController {
   // ─── 학생/공통 ────────────────────────────────────────────
   @Get('my')
   async getMyStickers(@CurrentUser() user: any) {
-    const data = await this.stickerService.getMyStickers(user.userId);
+    const data = await this.stickerService.getMyStickers(user.id);
     return { data };
   }
 
   @Post('my/:stickerId/read')
   @HttpCode(HttpStatus.OK)
   async readSticker(@CurrentUser() user: any, @Param('stickerId') stickerId: string) {
-    const data = await this.stickerService.readSticker(user.userId, stickerId);
+    const data = await this.stickerService.readSticker(user.id, stickerId);
     return { data };
   }
 
   @Put('my/featured')
   async setFeatured(@CurrentUser() user: any, @Body() dto: SetFeaturedDto) {
-    const data = await this.stickerService.setFeatured(user.userId, dto.featured);
+    const data = await this.stickerService.setFeatured(user.id, dto.featured);
     return { data };
   }
 
@@ -126,7 +126,7 @@ export class StickerController {
   @HttpCode(HttpStatus.CREATED)
   async awardSticker(@CurrentUser() user: any, @Body() dto: AwardStickerDto) {
     const data = await this.stickerService.awardSticker(
-      user.userId,
+      user.id,
       dto.studentId,
       dto.stickerCode,
       dto.comment,
@@ -140,7 +140,7 @@ export class StickerController {
   @HttpCode(HttpStatus.CREATED)
   async awardBulk(@CurrentUser() user: any, @Body() dto: AwardBulkDto) {
     const data = await this.stickerService.awardBulk(
-      user.userId,
+      user.id,
       dto.studentIds,
       dto.stickerCode,
       dto.comment,
@@ -154,7 +154,7 @@ export class StickerController {
   @HttpCode(HttpStatus.CREATED)
   async createCustom(@CurrentUser() user: any, @Body() dto: CreateCustomDto) {
     const data = await this.stickerService.createCustom(
-      user.userId,
+      user.id,
       dto.name,
       dto.emoji,
       dto.description,
@@ -165,14 +165,14 @@ export class StickerController {
   @Get('custom')
   @Roles('teacher')
   async getMyCustom(@CurrentUser() user: any) {
-    const data = await this.stickerService.getMyCustom(user.userId);
+    const data = await this.stickerService.getMyCustom(user.id);
     return { data };
   }
 
   @Delete('custom/:id')
   @Roles('teacher')
   async deleteCustom(@CurrentUser() user: any, @Param('id') id: string) {
-    const data = await this.stickerService.deleteCustom(id, user.userId);
+    const data = await this.stickerService.deleteCustom(id, user.id);
     return { data };
   }
 
@@ -185,7 +185,7 @@ export class StickerController {
     @Body() dto: AwardCustomDto,
   ) {
     const data = await this.stickerService.awardCustomSticker(
-      user.userId,
+      user.id,
       customId,
       dto.studentId,
       dto.comment,

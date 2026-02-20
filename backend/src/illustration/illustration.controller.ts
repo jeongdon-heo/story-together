@@ -87,7 +87,7 @@ export class IllustrationController {
   // 삽화 삭제
   @Delete(':id')
   async delete(@Param('id') id: string, @CurrentUser() user: any) {
-    const result = await this.illustrationService.deleteIllustration(id, user.userId);
+    const result = await this.illustrationService.deleteIllustration(id, user.id);
     return { data: result };
   }
 
@@ -95,7 +95,7 @@ export class IllustrationController {
   @Post(':id/regenerate')
   @HttpCode(HttpStatus.ACCEPTED)
   async regenerate(@Param('id') id: string, @CurrentUser() user: any) {
-    const result = await this.illustrationService.regenerateIllustration(id, user.userId);
+    const result = await this.illustrationService.regenerateIllustration(id, user.id);
     return { data: result };
   }
 }
