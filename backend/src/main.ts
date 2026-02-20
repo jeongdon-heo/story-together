@@ -17,8 +17,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: true,
+    origin: ['https://story-together.vercel.app', 'https://story-together-git-master-jeongdons-projects.vercel.app', 'https://story-together-fxn85fc43-jeongdons-projects.vercel.app'],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Socket.IO 어댑터 설정
