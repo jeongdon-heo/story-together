@@ -205,30 +205,37 @@ export default function IllustratePage() {
           {generatingJobs['cover'] ? (
             <div className="flex flex-col items-center py-8 text-gray-400">
               <div className="w-8 h-8 border-4 border-violet-400 border-t-transparent rounded-full animate-spin mb-3" />
-              <p className="text-sm">표지를 그리고 있어요... (약 30초~1분)</p>
+              <p className="text-sm">표지를 만들고 있어요... (약 30초~1분)</p>
             </div>
           ) : cover ? (
-            <div className="relative group">
-              <img
-                src={cover.imageUrl}
-                alt="동화책 표지"
-                className="w-full rounded-xl object-cover aspect-square"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                <button
-                  onClick={() => handleRegenerate(cover.id, cover.sceneIndex)}
-                  className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg"
-                >
-                  🔄 다시 그리기
-                </button>
-                <button
-                  onClick={() => handleDelete(cover.id)}
-                  className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg"
-                >
-                  삭제
-                </button>
+            cover.imageUrl ? (
+              <div className="relative group">
+                <img
+                  src={cover.imageUrl}
+                  alt="동화책 표지"
+                  className="w-full rounded-xl object-cover aspect-square"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => handleRegenerate(cover.id, cover.sceneIndex)}
+                    className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg"
+                  >
+                    🔄 다시 그리기
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cover.id)}
+                    className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg"
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-violet-50 border border-violet-200 rounded-xl p-5">
+                <p className="text-sm text-gray-700 leading-relaxed mb-3">{cover.sceneText || cover.prompt}</p>
+                <p className="text-xs text-violet-500 font-semibold">이미지 생성은 준비 중입니다</p>
+              </div>
+            )
           ) : (
             <div className="flex flex-col items-center py-8 text-gray-300">
               <div className="text-5xl mb-2">📖</div>
@@ -304,35 +311,42 @@ export default function IllustratePage() {
                     {isGenerating ? (
                       <div className="mt-3 flex flex-col items-center py-4 text-gray-400">
                         <div className="w-6 h-6 border-3 border-violet-400 border-t-transparent rounded-full animate-spin mb-2" />
-                        <p className="text-xs">그림 그리는 중... (약 30초~1분)</p>
+                        <p className="text-xs">삽화를 만들고 있어요... (약 30초~1분)</p>
                       </div>
                     ) : existingIllust ? (
-                      <div className="mt-3 relative group">
-                        <img
-                          src={existingIllust.imageUrl}
-                          alt={scene.text}
-                          className="w-full rounded-xl object-cover aspect-video"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                          <button
-                            onClick={() =>
-                              handleRegenerate(existingIllust.id, existingIllust.sceneIndex)
-                            }
-                            className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg"
-                          >
-                            🔄 다시 그리기
-                          </button>
-                          <button
-                            onClick={() => handleDelete(existingIllust.id)}
-                            className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg"
-                          >
-                            삭제
-                          </button>
+                      existingIllust.imageUrl ? (
+                        <div className="mt-3 relative group">
+                          <img
+                            src={existingIllust.imageUrl}
+                            alt={scene.text}
+                            className="w-full rounded-xl object-cover aspect-video"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                            <button
+                              onClick={() =>
+                                handleRegenerate(existingIllust.id, existingIllust.sceneIndex)
+                              }
+                              className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg"
+                            >
+                              🔄 다시 그리기
+                            </button>
+                            <button
+                              onClick={() => handleDelete(existingIllust.id)}
+                              className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                          <span className="absolute bottom-2 right-2 text-[10px] bg-black/50 text-white px-2 py-0.5 rounded-full">
+                            {STYLE_LABELS[existingIllust.style as IllustrationStyle]?.label || existingIllust.style}
+                          </span>
                         </div>
-                        <span className="absolute bottom-2 right-2 text-[10px] bg-black/50 text-white px-2 py-0.5 rounded-full">
-                          {STYLE_LABELS[existingIllust.style as IllustrationStyle]?.label || existingIllust.style}
-                        </span>
-                      </div>
+                      ) : (
+                        <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                          <p className="text-sm text-gray-700 leading-relaxed mb-2">{existingIllust.sceneText || existingIllust.prompt}</p>
+                          <p className="text-xs text-indigo-500 font-semibold">이미지 생성은 준비 중입니다</p>
+                        </div>
+                      )
                     ) : (
                       <button
                         onClick={() => handleGenerateScene(scene)}

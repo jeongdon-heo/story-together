@@ -176,48 +176,36 @@ export class IllustrationService {
 
       this.logger.log(`이미지 프롬프트: ${finalPrompt}`);
 
-      // 3. Gemini 이미지 생성
-      if (!this.genai) {
-        throw new Error('Gemini client not initialized (no API key)');
-      }
-      const response = await this.genai.models.generateContent({
-        model: 'gemini-2.0-flash-exp-image-generation',
-        contents: finalPrompt,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
-      });
-
+      // 3. 이미지 생성 시도 (Imagen 3) → 실패 시 텍스트 설명으로 대체
       let imageUrl = '';
 
-      // 응답에서 base64 이미지 추출
-      const candidates = response.candidates;
-      if (candidates && candidates.length > 0) {
-        const parts = candidates[0].content?.parts;
-        if (parts) {
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              // base64 이미지를 파일로 저장
-              const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
-              if (!fs.existsSync(uploadsDir)) {
-                fs.mkdirSync(uploadsDir, { recursive: true });
-              }
+      if (this.genai) {
+        try {
+          const response = await this.genai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: finalPrompt,
+            config: {
+              numberOfImages: 1,
+            },
+          });
 
-              const filename = `${jobId}.png`;
-              const filePath = path.join(uploadsDir, filename);
-              const buffer = Buffer.from(part.inlineData.data, 'base64');
-              fs.writeFileSync(filePath, buffer);
-
-              imageUrl = `/uploads/illustrations/${filename}`;
-              break;
+          const generated = (response as any).generatedImages;
+          if (generated && generated.length > 0 && generated[0].image?.imageBytes) {
+            const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
             }
-          }
-        }
-      }
 
-      if (!imageUrl) {
-        this.logger.warn(`이미지 생성 응답에 이미지 없음, jobId=${jobId}`);
-        imageUrl = '';
+            const filename = `${jobId}.png`;
+            const filePath = path.join(uploadsDir, filename);
+            const buffer = Buffer.from(generated[0].image.imageBytes, 'base64');
+            fs.writeFileSync(filePath, buffer);
+
+            imageUrl = `/uploads/illustrations/${filename}`;
+          }
+        } catch (imgError: any) {
+          this.logger.warn(`Imagen 3 이미지 생성 실패 (텍스트 설명으로 대체): ${imgError.message}`);
+        }
       }
 
       // 4. DB 저장
