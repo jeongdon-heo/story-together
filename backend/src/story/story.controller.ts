@@ -25,6 +25,21 @@ export class StoryController {
     return { data };
   }
 
+  @Get('my')
+  async findMyStories(
+    @CurrentUser() user: User,
+    @Query('mode') mode?: string,
+    @Query('status') status?: string,
+    @Query('sort') sort?: string,
+  ) {
+    const data = await this.storyService.findMyStories(user.id, {
+      mode,
+      status,
+      sort,
+    });
+    return { data };
+  }
+
   @Get()
   async findMany(
     @Query('sessionId') sessionId?: string,

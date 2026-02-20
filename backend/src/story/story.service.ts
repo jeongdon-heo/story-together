@@ -288,6 +288,42 @@ export class StoryService {
     return { message: '파트가 삭제되었습니다' };
   }
 
+  // 내 이야기 목록 (세션 모드 포함, 경량 DTO)
+  async findMyStories(
+    userId: string,
+    filters: { mode?: string; status?: string; sort?: string },
+  ) {
+    const stories = await this.prisma.story.findMany({
+      where: {
+        userId,
+        ...(filters.status && { status: filters.status }),
+        ...(filters.mode && {
+          session: { mode: filters.mode },
+        }),
+      },
+      include: {
+        session: { select: { mode: true, title: true } },
+        parts: { select: { text: true }, orderBy: { order: 'asc' } },
+      },
+      orderBy: {
+        createdAt: filters.sort === 'oldest' ? 'asc' : 'desc',
+      },
+    });
+
+    return stories.map((s) => ({
+      id: s.id,
+      sessionId: s.sessionId,
+      mode: s.session?.mode || 'solo',
+      status: s.status,
+      title: s.session?.title || '',
+      aiCharacter: s.aiCharacter,
+      partCount: s.parts.length,
+      wordCount: s.parts.reduce((sum, p) => sum + p.text.length, 0),
+      completedAt: s.completedAt,
+      createdAt: s.createdAt,
+    }));
+  }
+
   // 부적절 내용 플래그
   async flagPart(partId: string) {
     return this.prisma.storyPart.update({

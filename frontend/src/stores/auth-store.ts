@@ -17,6 +17,7 @@ interface AuthState {
   login: (data: LoginRequest) => Promise<void>;
   registerTeacher: (data: RegisterTeacherRequest) => Promise<void>;
   guestLogin: (data: GuestLoginRequest) => Promise<void>;
+  setTokensFromOAuth: (accessToken: string, refreshToken?: string) => Promise<User | null>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -66,6 +67,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({ isLoading: false });
       throw error;
+    }
+  },
+
+  setTokensFromOAuth: async (accessToken, refreshToken) => {
+    localStorage.setItem('accessToken', accessToken);
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    try {
+      const res = await authApi.getMe();
+      const user = res.data;
+      set({ user, isInitialized: true });
+      return user;
+    } catch {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      set({ user: null });
+      throw new Error('사용자 정보를 가져올 수 없습니다');
     }
   },
 

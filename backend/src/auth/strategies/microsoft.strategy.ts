@@ -1,13 +1,49 @@
-// 스켈레톤: Microsoft OAuth 키 발급 후 실제 연동
-// passport-azure-ad 또는 passport-microsoft 패키지 필요
-// 현재는 타입만 정의해두고, 실제 전략은 키 발급 후 구현
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-microsoft';
 
-export interface MicrosoftProfile {
-  id: string;
-  displayName: string;
-  emails: { value: string }[];
+@Injectable()
+export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') {
+  constructor(configService: ConfigService) {
+    const tenantId =
+      configService.get<string>('MS_TENANT_ID') || 'common';
+
+    super({
+      clientID: configService.get<string>('MS_CLIENT_ID') || 'placeholder',
+      clientSecret:
+        configService.get<string>('MS_CLIENT_SECRET') || 'placeholder',
+      callbackURL: '/auth/microsoft/callback',
+      scope: ['user.read'],
+      tenant: tenantId,
+      authorizationURL: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`,
+      tokenURL: `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+    });
+  }
+
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: {
+      id: string;
+      displayName: string;
+      emails?: Array<{ value: string; type?: string }>;
+      _json?: { mail?: string; userPrincipalName?: string };
+    },
+    done: (error: Error | null, user?: Record<string, string>) => void,
+  ): Promise<void> {
+    const email =
+      profile.emails?.[0]?.value ||
+      profile._json?.mail ||
+      profile._json?.userPrincipalName ||
+      '';
+
+    const user = {
+      email,
+      name: profile.displayName,
+      provider: 'microsoft',
+      providerId: profile.id,
+    };
+    done(null, user);
+  }
 }
-
-// TODO: MS OAuth 전략 구현
-// @Injectable()
-// export class MicrosoftStrategy extends PassportStrategy(Strategy, 'microsoft') { ... }

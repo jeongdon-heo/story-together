@@ -8,6 +8,19 @@ import type {
   CompleteResult,
 } from '../types/story';
 
+export interface MyStoryItem {
+  id: string;
+  sessionId: string;
+  mode: 'solo' | 'relay' | 'same_start' | 'branch';
+  status: 'writing' | 'completed';
+  title: string;
+  aiCharacter: string | null;
+  partCount: number;
+  wordCount: number;
+  completedAt: string | null;
+  createdAt: string;
+}
+
 export const storyApi = {
   // 세션
   createSession: (data: {
@@ -55,5 +68,11 @@ export const storyApi = {
       .post<ApiResponse<{ starters: string[] }>>('/ai/generate-sentence-starter', {
         storyId,
       })
+      .then((r) => r.data),
+
+  // 내 이야기 목록
+  getMyStories: (params?: { mode?: string; status?: string; sort?: string }) =>
+    api
+      .get<ApiResponse<MyStoryItem[]>>('/stories/my', { params })
       .then((r) => r.data),
 };

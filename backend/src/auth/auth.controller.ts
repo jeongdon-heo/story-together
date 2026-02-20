@@ -4,9 +4,15 @@ import {
   Get,
   Patch,
   Post,
+  Req,
+  Res,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
 import { RegisterTeacherDto } from './dto/register-teacher.dto';
@@ -24,7 +30,12 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService,
+    private configService: ConfigService,
   ) {}
+
+  private get frontendUrl(): string {
+    return this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+  }
 
   @Public()
   @Post('register-teacher')
@@ -48,26 +59,70 @@ export class AuthController {
     return { data };
   }
 
+  // --- Google OAuth ---
   @Public()
-  @Post('google')
-  @HttpCode(HttpStatus.OK)
-  async googleLogin() {
-    // 스켈레톤: 프론트에서 Google OAuth 토큰을 받아 처리
-    return {
-      data: null,
-      error: 'Google OAuth가 아직 구성되지 않았습니다. GOOGLE_CLIENT_ID/SECRET을 설정하세요.',
-    };
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleLogin() {
+    // Passport가 Google 로그인 페이지로 리다이렉트
   }
 
   @Public()
-  @Post('microsoft')
-  @HttpCode(HttpStatus.OK)
-  async microsoftLogin() {
-    // 스켈레톤: 프론트에서 MS OAuth 토큰을 받아 처리
-    return {
-      data: null,
-      error: 'Microsoft OAuth가 아직 구성되지 않았습니다. MS_CLIENT_ID/SECRET을 설정하세요.',
-    };
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
+    try {
+      const oauthUser = req.user as {
+        email: string;
+        name: string;
+        provider: string;
+        providerId: string;
+      };
+      const result = await this.authService.oauthLogin(oauthUser);
+      const params = new URLSearchParams({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
+      res.redirect(`${this.frontendUrl}/auth/callback?${params.toString()}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'auth_failed';
+      const params = new URLSearchParams({ error: message });
+      res.redirect(`${this.frontendUrl}/auth/callback?${params.toString()}`);
+    }
+  }
+
+  // --- Microsoft OAuth ---
+  @Public()
+  @Get('microsoft')
+  @UseGuards(AuthGuard('microsoft'))
+  microsoftLogin() {
+    // Passport가 Microsoft 로그인 페이지로 리다이렉트
+  }
+
+  @Public()
+  @Get('microsoft/callback')
+  @UseGuards(AuthGuard('microsoft'))
+  async microsoftCallback(@Req() req: Request, @Res() res: Response) {
+    try {
+      const oauthUser = req.user as {
+        email: string;
+        name: string;
+        provider: string;
+        providerId: string;
+      };
+      const result = await this.authService.oauthLogin(oauthUser);
+      const params = new URLSearchParams({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
+      res.redirect(`${this.frontendUrl}/auth/callback?${params.toString()}`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'auth_failed';
+      const params = new URLSearchParams({ error: message });
+      res.redirect(`${this.frontendUrl}/auth/callback?${params.toString()}`);
+    }
   }
 
   @Post('change-password')
