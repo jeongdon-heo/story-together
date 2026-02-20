@@ -131,20 +131,32 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 
 ${storyText}
 
-위 이야기에 이어지는 다음 장면을 작성하세요.`;
+위 이야기에 이어지는 다음 장면을 작성하세요. 절대 물음표(?)를 사용하지 마세요. 마지막 문장은 반드시 서술형(~했습니다, ~있었습니다)으로 끝내세요.`;
 
     this.logger.log(`continueStory: parts=${previousParts.length}, msgLen=${userMessage.length}`);
 
     try {
-      return await this.callGeminiText(systemPrompt, [
+      let result = await this.callGeminiText(systemPrompt, [
         { role: 'user', content: userMessage },
       ]);
+      // 후처리: 마지막 문장이 질문형이면 제거
+      result = this.removeTrailingQuestion(result);
+      return result;
     } catch (error: any) {
       const msg = error?.message || String(error);
       const status = error?.status || error?.response?.status || 'unknown';
       this.logger.error(`이야기 이어쓰기 API 호출 실패: status=${status}, msg=${msg}`, error?.stack);
       throw new Error(`AI 응답 생성에 실패했습니다: ${msg}`);
     }
+  }
+
+  // 마지막 문장이 물음표로 끝나면 제거
+  private removeTrailingQuestion(text: string): string {
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    while (sentences.length > 1 && sentences[sentences.length - 1].trim().endsWith('?')) {
+      sentences.pop();
+    }
+    return sentences.join(' ');
   }
 
   private readonly fallbackEndings: string[] = [
@@ -205,14 +217,15 @@ ${storyText}
 [이야기 전체 내용]
 ${storyContext}
 
-위 이야기를 읽고 마지막 장면에서 바로 이어지는 결말을 작성해주세요.`;
+위 이야기를 읽고 마지막 장면에서 바로 이어지는 결말을 작성해주세요. 절대 물음표(?)를 사용하지 마세요.`;
 
     this.logger.log(`generateEnding: systemPrompt=${systemPrompt.length}자, userMessage=${userMessage.length}자`);
 
     try {
-      const result = await this.callGeminiText(systemPrompt, [
+      let result = await this.callGeminiText(systemPrompt, [
         { role: 'user', content: userMessage },
       ]);
+      result = this.removeTrailingQuestion(result);
       this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 100)}...`);
       return result;
     } catch (error: any) {
