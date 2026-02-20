@@ -119,16 +119,33 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
     grade: number,
     aiCharacter: string,
   ): Promise<string> {
+    const lastStudentPart = [...previousParts].reverse().find((p) => p.role === 'user');
+    const storyContext = previousParts.map((p) => p.content).join('\n\n');
+
     const systemPrompt =
       buildSystemPrompt(grade, aiCharacter) +
-      `\n\n이전까지의 이야기를 자연스럽게 이어서 작성하세요.
-학생이 쓴 내용을 존중하고 발전시키세요.
-새로운 사건이나 반전을 추가해서 학생이 계속 이어쓸 수 있게 해주세요.`;
+      `\n\n[핵심 규칙: 학생이 쓴 내용에 직접 이어쓰기]
+학생이 방금 쓴 마지막 문장에서 바로 이어지는 내용을 작성하세요.
+
+절대 하지 말 것:
+- 학생이 쓴 내용과 관계없는 새로운 장면이나 사건을 갑자기 시작하지 마세요.
+- 이야기 흐름을 무시하고 엉뚱한 방향으로 가지 마세요.
+- 학생이 쓴 내용을 반복하거나 요약하지 마세요.
+
+반드시 할 것:
+- 학생이 쓴 내용의 직접적인 결과, 반응, 후속 상황을 보여주세요.
+- 학생이 묘사한 행동에 대한 결과를 자연스럽게 이어가세요.
+- 이야기 끝부분에 학생이 다음에 이어쓸 수 있는 여지를 남기세요.
+
+${lastStudentPart ? `[학생이 방금 쓴 내용 — 여기서 바로 이어쓰세요]\n"${lastStudentPart.content}"` : ''}
+
+[이야기 전체 맥락]
+${storyContext}`;
 
     try {
       return await this.callGeminiText(systemPrompt, previousParts);
     } catch (error) {
-      this.logger.warn('이야기 이어쓰기 API 호출 실패, 기본 텍스트 사용:', error);
+      this.logger.error('이야기 이어쓰기 API 호출 실패:', error instanceof Error ? error.message : error);
       const idx = previousParts.length % this.fallbackContinuations.length;
       return this.fallbackContinuations[idx];
     }
@@ -159,18 +176,33 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
   ): Promise<string> {
     this.logger.log(`generateEnding 호출: grade=${grade}, parts=${previousParts.length}, aiCharacter=${aiCharacter}, geminiReady=${!!this.client}`);
 
-    const storyContext = previousParts.map((p) => p.content).join('\n\n');
+    const storyContext = previousParts.map((p, i) => {
+      const who = p.role === 'user' ? '학생' : 'AI';
+      return `[${i + 1}번째 - ${who}]\n${p.content}`;
+    }).join('\n\n');
+
+    const lastPart = previousParts[previousParts.length - 1];
 
     const systemPrompt =
       buildSystemPrompt(grade, aiCharacter) +
-      `\n\n이제 이 이야기를 아름답게 마무리해주세요.
-- 지금까지의 이야기 흐름과 등장인물을 고려해서 자연스러운 결말을 만드세요.
-- 모든 갈등이 해결되도록 하세요.
-- 등장인물들이 무엇을 배웠는지 자연스럽게 보여주세요.
-- 따뜻하고 희망적인 결말을 만들어주세요.
-- "그리하여" 또는 "그래서" 등으로 자연스럽게 끝맺으세요.
+      `\n\n[결말 작성 규칙]
+이 이야기를 자연스럽고 아름답게 마무리해주세요.
 
-[이야기 전체 내용]
+반드시 할 것:
+- 이야기에 등장한 실제 인물 이름, 장소, 사건을 그대로 사용하세요.
+- 마지막 장면에서 바로 이어지는 결말을 쓰세요.
+- 이야기에서 생긴 갈등이나 문제를 해결해주세요.
+- 등장인물이 이 모험을 통해 무엇을 느꼈는지 보여주세요.
+- 따뜻하고 희망적인 결말로 끝내세요.
+
+절대 하지 말 것:
+- 이야기에 없는 새로운 인물이나 장소를 만들지 마세요.
+- 이야기 내용을 요약하거나 반복하지 마세요.
+- 교훈을 직접적으로 설명하지 마세요 (자연스럽게 느껴지게).
+
+${lastPart ? `[직전 장면 — 여기서 이어서 마무리하세요]\n"${lastPart.content}"` : ''}
+
+[이야기 전체 흐름]
 ${storyContext}`;
 
     try {
