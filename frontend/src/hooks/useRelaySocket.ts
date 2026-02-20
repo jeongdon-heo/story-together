@@ -33,7 +33,6 @@ export function useRelaySocket({
     setCompleted,
     setContentRejected,
     setHints,
-    setBgmMood,
   } = useRelayStore();
 
   useEffect(() => {
@@ -105,10 +104,6 @@ export function useRelaySocket({
       setHints(data.hints || []);
     });
 
-    socket.on('relay:bgm_mood_changed', (data: any) => {
-      if (data.mood) setBgmMood(data.mood);
-    });
-
     return () => {
       socket.emit('leave_session', { sessionId, userId });
       socket.off('participant_list');
@@ -124,7 +119,6 @@ export function useRelaySocket({
       socket.off('relay:story_completed');
       socket.off('relay:content_rejected');
       socket.off('relay:hint_response');
-      socket.off('relay:bgm_mood_changed');
     };
   }, [storyId, sessionId, userId, userName, token]);
 

@@ -44,9 +44,6 @@ class ExportAudioDto {
   @IsString()
   voiceStyle?: string;
 
-  @IsOptional()
-  @IsString()
-  bgmMode?: string;
 }
 
 class ExportVideoDto {
@@ -95,7 +92,6 @@ export class ExportController {
   async exportAudio(@Body() dto: ExportAudioDto) {
     const data = await this.exportService.exportAudio(dto.storyId, {
       voiceStyle: dto.voiceStyle,
-      bgmMode: dto.bgmMode,
     });
     return { data };
   }

@@ -137,7 +137,7 @@ export class ExportService {
   }
 
   // ─── 오디오 내보내기 (AudioTrack 파일 URL 반환) ──────────────
-  async exportAudio(storyId: string, options: { voiceStyle?: string; bgmMode?: string }) {
+  async exportAudio(storyId: string, options: { voiceStyle?: string }) {
     const job = this.createJob('audio');
     this.processAudio(job, storyId, options).catch((err) => {
       job.status = 'failed';

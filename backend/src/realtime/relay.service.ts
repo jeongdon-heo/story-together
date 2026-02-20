@@ -239,13 +239,7 @@ export class RelayService {
       },
     });
 
-    // BGM 분위기 (간단히 랜덤)
-    this.server.to(room).emit('relay:bgm_mood_changed', {
-      mood: 'adventure',
-      bgmStyle: 'adventure',
-      transition: 'crossfade',
-      intensity: 0.7,
-    });
+
 
     // 다음 차례
     this.advanceTurn(storyId);

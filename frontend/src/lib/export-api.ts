@@ -53,7 +53,7 @@ export const exportApi = {
   exportCollection: (data: { storyIds: string[]; title?: string }) =>
     api.post<ApiResponse<ExportJob>>('/export/pdf/collection', data).then((r) => r.data),
 
-  exportAudio: (data: { storyId: string; voiceStyle?: string; bgmMode?: string }) =>
+  exportAudio: (data: { storyId: string; voiceStyle?: string }) =>
     api.post<ApiResponse<ExportJob>>('/export/audio', data).then((r) => r.data),
 
   exportVideo: (data: {
