@@ -141,15 +141,12 @@ export default function ClassAnalyticsPage() {
                   onClick={() => router.push(`/teacher/analytics/student/${member.userId}`)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
                 >
-                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm shrink-0">
-                    {(member as any).user?.avatarIcon || '👤'}
+                   <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm shrink-0">
+                    {(member as any).avatarIcon || '👤'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">
-                      {(member as any).user?.name || member.userId}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {(member as any).user?.grade || '-'}학년
+                      {(member as any).name || member.userId}
                     </p>
                   </div>
                   <span className="text-gray-400 text-sm">→</span>
