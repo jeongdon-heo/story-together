@@ -126,7 +126,7 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 
     // 이야기 맥락을 systemInstruction이 아닌 대화 메시지로 전달
     const messagesWithContext: StoryMessage[] = [
-      { role: 'user', content: `[이야기 전체 맥락]\n${storyContext}\n\n학생이 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요.` },
+      { role: 'user', content: `[이야기 전체 맥락]\n${storyContext}\n\n학생이 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요. 학생이 이미 작성한 내용을 반복하지 말고, 학생의 마지막 문장 이후부터 바로 이어서 쓰세요.` },
       ...previousParts,
     ];
 
