@@ -49,6 +49,7 @@ export interface AddPartResult {
   rejected?: boolean;
   reason?: string;
   suggestion?: string;
+  aiError?: string;
 }
 
 export interface CompleteResult {
