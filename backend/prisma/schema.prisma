@@ -126,8 +126,8 @@ model ClassMember {
 
 model Session {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  classId   String    @db.Uuid
-  classRoom ClassRoom @relation(fields: [classId], references: [id], onDelete: Cascade)
+  classId   String?   @db.Uuid
+  classRoom ClassRoom? @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   mode      String  @db.VarChar(30)
   title     String? @db.VarChar(200)

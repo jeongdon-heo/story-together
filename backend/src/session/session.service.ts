@@ -18,23 +18,19 @@ export class SessionService {
   }
 
   async create(userId: string, role: string, dto: CreateSessionDto) {
-    // solo 모드는 classId 없이 생성 가능
+    // 그룹 모드 (relay, branch, same_start)는 반 필수
     if (dto.mode !== 'solo' && !dto.classId) {
       throw new ForbiddenException('그룹 모드는 반이 필요합니다');
     }
 
-    // solo 모드에서 classId 없으면 임시 세션 (게스트/학생 직접 시작)
+    // solo 모드에서 classId 없으면 소속 반 자동 탐색
     if (dto.mode === 'solo' && !dto.classId) {
       const membership = await this.prisma.classMember.findFirst({
         where: { userId },
         select: { classId: true },
       });
-
-      if (!membership && role !== 'guest') {
-        throw new ForbiddenException('소속된 반이 없습니다');
-      }
-
-      dto.classId = membership?.classId;
+      // 소속 반이 있으면 사용, 없으면 null (게스트/미소속 학생 허용)
+      dto.classId = membership?.classId || undefined;
     }
 
     // 반 모드 권한 확인 (교사만 그룹 세션 생성)
@@ -47,7 +43,8 @@ export class SessionService {
       }
     }
 
-    if (!dto.classId) {
+    // 그룹 모드에서는 반 필수
+    if (dto.mode !== 'solo' && !dto.classId) {
       throw new ForbiddenException('반 정보가 필요합니다');
     }
 
@@ -78,7 +75,7 @@ export class SessionService {
 
     const session = await this.prisma.session.create({
       data: {
-        classId: dto.classId,
+        ...(dto.classId ? { classId: dto.classId } : {}),
         mode: dto.mode,
         title: dto.title,
         themeData: dto.themeData,
@@ -214,7 +211,7 @@ export class SessionService {
   ) {
     const session = await this.findById(id);
 
-    if (teacherId) {
+    if (teacherId && session.classId) {
       const classRoom = await this.prisma.classRoom.findUnique({
         where: { id: session.classId },
       });

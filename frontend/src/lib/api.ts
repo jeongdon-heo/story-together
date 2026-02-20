@@ -16,14 +16,16 @@ const api = axios.create({
   },
 });
 
+// 인증이 필요 없는 엔드포인트 (로그인, 회원가입, 게스트, 토큰 갱신)
+const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/register-teacher', '/auth/guest', '/auth/refresh', '/auth/google', '/auth/microsoft'];
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn('[API] accessToken 없음:', config.method?.toUpperCase(), config.url);
     }
+    // public 엔드포인트에서는 토큰 없어도 정상
   }
   return config;
 });

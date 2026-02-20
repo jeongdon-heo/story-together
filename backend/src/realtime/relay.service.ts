@@ -102,7 +102,7 @@ export class RelayService {
       },
     });
 
-    const members = story.session.classRoom.members;
+    const members = story.session.classRoom?.members ?? [];
     const participants: RelayParticipant[] = members.map((m) => ({
       userId: m.userId,
       name: m.displayName || m.user.name,

@@ -101,7 +101,7 @@ export class BranchService {
       },
     });
 
-    const members = story.session.classRoom.members;
+    const members = story.session.classRoom?.members ?? [];
     const participants: BranchParticipant[] = members.map((m) => ({
       userId: m.userId,
       name: m.displayName || m.user.name,
