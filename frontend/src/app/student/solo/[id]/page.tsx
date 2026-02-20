@@ -208,6 +208,18 @@ export default function SoloStoryPage() {
           </div>
           <div className="max-w-2xl mx-auto grid grid-cols-2 gap-2">
             <button
+              onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
+              className="py-3 bg-violet-500 text-white font-bold rounded-xl hover:bg-violet-600 transition-colors text-sm"
+            >
+              🎨 삽화 만들기
+            </button>
+            <button
+              onClick={() => router.push(`/student/solo/${storyId}/listen`)}
+              className="py-3 bg-pink-500 text-white font-bold rounded-xl hover:bg-pink-600 transition-colors text-sm"
+            >
+              🎧 음성 듣기
+            </button>
+            <button
               onClick={() => router.push(`/student/solo/${storyId}/book`)}
               className="py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors text-sm"
             >
