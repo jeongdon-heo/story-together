@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getBaseURL } from '../../../lib/api';
 
 export default function SameStartEntryPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function SameStartEntryPage() {
       // 6~8자 영숫자 → 단축코드로 판단, UUID(36자)는 직접 사용
       if (trimmed.length <= 8 && !/^[0-9a-f-]{36}$/i.test(trimmed)) {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/sessions/join/${trimmed}`,
+          `${getBaseURL()}/sessions/join/${trimmed}`,
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));

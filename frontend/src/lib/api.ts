@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+export function getBaseURL() {
+  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  // /api가 이미 포함되어 있으면 그대로, 아니면 추가
+  return raw.endsWith('/api') ? raw : raw + '/api';
+}
+
 const api = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000') + '/api',
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -84,7 +90,7 @@ api.interceptors.response.use(
 
     try {
       const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/refresh`,
+        `${getBaseURL()}/auth/refresh`,
         { refreshToken },
       );
 

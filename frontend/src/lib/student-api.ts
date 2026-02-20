@@ -1,4 +1,4 @@
-import api from './api';
+import api, { getBaseURL } from './api';
 import type {
   ApiResponse,
 } from '../types/auth';
@@ -56,5 +56,5 @@ export const studentApi = {
       .then((r) => r.data),
 
   exportCsvUrl: (classId: string) =>
-    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/students/class/${classId}/export/csv`,
+    `${getBaseURL()}/students/class/${classId}/export/csv`,
 };
