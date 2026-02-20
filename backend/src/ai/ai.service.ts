@@ -140,7 +140,7 @@ ${storyText}
         { role: 'user', content: userMessage },
       ]);
       // 후처리: 마지막 문장이 질문형이면 제거
-      result = this.removeTrailingQuestion(result);
+      result = this.postProcessStoryText(result);
       return result;
     } catch (error: any) {
       const msg = error?.message || String(error);
@@ -150,13 +150,24 @@ ${storyText}
     }
   }
 
-  // 마지막 문장이 물음표로 끝나면 제거
-  private removeTrailingQuestion(text: string): string {
+  // 후처리: 물음표 제거 + 비한국어 텍스트 검증
+  private postProcessStoryText(text: string): string {
+    // 1. 마지막 문장이 물음표로 끝나면 제거
     const sentences = text.split(/(?<=[.!?])\s+/);
     while (sentences.length > 1 && sentences[sentences.length - 1].trim().endsWith('?')) {
       sentences.pop();
     }
-    return sentences.join(' ');
+    let result = sentences.join(' ');
+
+    // 2. 한국어가 아닌 문자가 대부분이면 에러
+    const koreanChars = (result.match(/[\uAC00-\uD7AF\u3131-\u3163\u1100-\u11FF]/g) || []).length;
+    const totalChars = result.replace(/[\s\d.,!'"()\-:;]/g, '').length;
+    if (totalChars > 0 && koreanChars / totalChars < 0.5) {
+      this.logger.error(`비한국어 응답 감지: korean=${koreanChars}/${totalChars}, text=${result.substring(0, 100)}`);
+      throw new Error('AI가 한국어가 아닌 응답을 생성했습니다. 다시 시도해주세요.');
+    }
+
+    return result;
   }
 
   private readonly fallbackEndings: string[] = [
@@ -225,7 +236,7 @@ ${storyContext}
       let result = await this.callGeminiText(systemPrompt, [
         { role: 'user', content: userMessage },
       ]);
-      result = this.removeTrailingQuestion(result);
+      result = this.postProcessStoryText(result);
       this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 100)}...`);
       return result;
     } catch (error: any) {
