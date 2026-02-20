@@ -1,6 +1,9 @@
 # ── Stage 1: Build ──
 FROM node:20-alpine AS builder
 
+# Install OpenSSL for Prisma engine
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy package files
@@ -20,6 +23,9 @@ RUN npm run build
 # ── Stage 2: Production ──
 FROM node:20-alpine AS runner
 
+# Install OpenSSL for Prisma engine
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Create non-root user
@@ -32,8 +38,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
 
-# Create uploads directory
-RUN mkdir -p /app/uploads && chown nestjs:nestjs /app/uploads
+# Fix ownership so nestjs user can run prisma db push
+RUN chown -R nestjs:nestjs /app
 
 USER nestjs
 
