@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 export function getBaseURL() {
+  // 브라우저: 상대 경로 /api → Next.js rewrites가 백엔드로 프록시
+  // 서버(SSR): 환경변수 또는 localhost 직접 호출
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
   const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  // /api가 이미 포함되어 있으면 그대로, 아니면 추가
   return raw.endsWith('/api') ? raw : raw + '/api';
 }
 
