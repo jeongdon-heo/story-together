@@ -203,16 +203,17 @@ ${storyContext}`;
       return `[${i + 1}번째 - ${who}]\n${p.content}`;
     }).join('\n\n');
 
-    const lastPart = previousParts[previousParts.length - 1];
-
     const systemPrompt =
       buildSystemPrompt(grade, aiCharacter) +
-      `\n\n[결말 작성 규칙]
-이 이야기를 자연스럽고 아름답게 마무리해주세요.
+      `\n\n아래는 학생과 AI가 함께 쓴 이야기 전체 내용입니다. 이 이야기의 마지막 문단을 자연스럽게 마무리해주세요. 앞의 내용과 직접적으로 이어져야 합니다.
 
+[이야기 전체 내용]
+${storyContext}
+
+[결말 작성 규칙]
 반드시 할 것:
+- 바로 위 이야기의 마지막 장면에서 직접 이어지는 결말을 쓰세요.
 - 이야기에 등장한 실제 인물 이름, 장소, 사건을 그대로 사용하세요.
-- 마지막 장면에서 바로 이어지는 결말을 쓰세요.
 - 이야기에서 생긴 갈등이나 문제를 해결해주세요.
 - 등장인물이 이 모험을 통해 무엇을 느꼈는지 보여주세요.
 - 따뜻하고 희망적인 결말로 끝내세요.
@@ -220,26 +221,19 @@ ${storyContext}`;
 절대 하지 말 것:
 - 이야기에 없는 새로운 인물이나 장소를 만들지 마세요.
 - 이야기 내용을 요약하거나 반복하지 마세요.
-- 교훈을 직접적으로 설명하지 마세요 (자연스럽게 느껴지게).
-- 절대 질문형 문장으로 끝내지 마세요. "과연 ~할까요?", "어떻게 됐을까요?" 같은 질문 금지. 반드시 서술형으로 마무리하세요.
-
-${lastPart ? `[직전 장면 — 여기서 이어서 마무리하세요]\n"${lastPart.content}"` : ''}
-
-[이야기 전체 흐름]
-${storyContext}`;
+- 교훈을 직접적으로 설명하지 마세요.
+- 절대 질문형 문장으로 끝내지 마세요. 반드시 서술형으로 마무리하세요.`;
 
     try {
-      // systemPrompt에 이야기 전체가 이미 포함되어 있으므로
-      // messages는 단일 user 요청으로 보냄 (Gemini 역할 충돌 방지)
       const result = await this.callGeminiText(systemPrompt, [
-        { role: 'user', content: '위 이야기의 결말을 작성해주세요.' },
+        { role: 'user', content: '위 이야기 전체 내용을 읽고, 마지막 장면에서 바로 이어지는 자연스러운 결말을 작성해주세요.' },
       ]);
       this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 80)}...`);
       return result;
     } catch (error: any) {
       const msg = error?.message || String(error);
       this.logger.error(`generateEnding 실패: ${msg}`, error?.stack);
-      throw new Error(`AI 결말 생성에 실패했습니다: ${msg}`);
+      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요.`);
     }
   }
 
