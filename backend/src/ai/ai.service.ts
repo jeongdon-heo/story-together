@@ -592,6 +592,24 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
 
   // --- 헬퍼 ---
 
+  private async withRetry<T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        const status = error?.status || error?.response?.status;
+        if (status === 429 && attempt < maxRetries) {
+          const delay = (attempt + 1) * 3000; // 3초, 6초
+          this.logger.warn(`Gemini 429 Rate Limit — ${delay}ms 후 재시도 (${attempt + 1}/${maxRetries})`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new Error('재시도 횟수 초과');
+  }
+
   private async callGeminiText(
     systemPrompt: string,
     messages: StoryMessage[],
@@ -599,8 +617,9 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     if (!this.client) {
       throw new Error('Gemini client not initialized (no API key)');
     }
-    try {
-      const response = await this.client.models.generateContent({
+
+    return this.withRetry(async () => {
+      const response = await this.client!.models.generateContent({
         model: this.model,
         contents: messages.map((m) => ({
           role: m.role === 'assistant' ? 'model' : 'user',
@@ -611,11 +630,12 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
         },
       });
 
-      return response.text || '';
-    } catch (error) {
-      this.logger.error('Gemini API 호출 실패:', error);
-      throw error;
-    }
+      const text = response.text || '';
+      if (!text) {
+        this.logger.warn('Gemini API 빈 응답 반환');
+      }
+      return text;
+    });
   }
 
   private async callGeminiJSON<T>(
@@ -625,8 +645,9 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     if (!this.client) {
       throw new Error('Gemini client not initialized (no API key)');
     }
-    try {
-      const response = await this.client.models.generateContent({
+
+    return this.withRetry(async () => {
+      const response = await this.client!.models.generateContent({
         model: this.model,
         contents: [
           {
@@ -642,9 +663,6 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
       const text = response.text || '';
       const clean = text.replace(/```json|```/g, '').trim();
       return JSON.parse(clean) as T;
-    } catch (error) {
-      this.logger.error('Gemini API JSON 파싱 실패:', error);
-      throw error;
-    }
+    });
   }
 }
