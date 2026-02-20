@@ -8,7 +8,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { IsNotEmpty, IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsIn, IsOptional, IsUUID, IsNumber } from 'class-validator';
 import { IllustrationService } from './illustration.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -23,6 +23,7 @@ class GenerateIllustrationDto {
   @IsUUID()
   storyId: string;
 
+  @IsNumber()
   sceneIndex: number;
 
   @IsNotEmpty()
