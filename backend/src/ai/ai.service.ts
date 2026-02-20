@@ -119,19 +119,26 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
     grade: number,
     aiCharacter: string,
   ): Promise<string> {
-    const lastStudentPart = [...previousParts].reverse().find((p) => p.role === 'user');
-    const storyContext = previousParts.map((p) => p.content).join('\n\n');
-
     const systemPrompt = buildSystemPrompt(grade, aiCharacter);
 
-    // 이야기 맥락을 systemInstruction이 아닌 대화 메시지로 전달
-    const messagesWithContext: StoryMessage[] = [
-      { role: 'user', content: `[이야기 전체 맥락]\n${storyContext}\n\n학생이 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요. 학생이 이미 작성한 내용을 반복하지 말고, 학생의 마지막 문장 이후부터 바로 이어서 쓰세요.` },
-      ...previousParts,
-    ];
+    // 이야기 전체를 하나의 user 메시지로 전달 (중복 방지, Gemini 역할 교대 제약 회피)
+    const storyText = previousParts.map((p, i) => {
+      const who = p.role === 'user' ? '학생' : 'AI';
+      return `[${who}] ${p.content}`;
+    }).join('\n\n');
+
+    const userMessage = `아래는 학생과 AI가 번갈아 쓴 이야기입니다. 학생이 마지막으로 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요. 학생이 이미 작성한 내용을 반복하지 마세요.
+
+${storyText}
+
+위 이야기에 이어지는 다음 장면을 작성하세요.`;
+
+    this.logger.log(`continueStory: parts=${previousParts.length}, msgLen=${userMessage.length}`);
 
     try {
-      return await this.callGeminiText(systemPrompt, messagesWithContext);
+      return await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: userMessage },
+      ]);
     } catch (error: any) {
       const msg = error?.message || String(error);
       const status = error?.status || error?.response?.status || 'unknown';

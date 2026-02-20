@@ -177,11 +177,13 @@ export class StoryService {
     previousParts.push({ role: 'user', content: text });
 
     try {
+      this.logger.log(`addPart: AI 이어쓰기 호출 시작 — parts=${previousParts.length}, grade=${grade}`);
       const aiText = await this.aiService.continueStory(
         previousParts,
         grade,
         story.aiCharacter || 'grandmother',
       );
+      this.logger.log(`addPart: AI 이어쓰기 성공 — ${aiText.length}자`);
 
       const aiPart = await this.prisma.storyPart.create({
         data: {
@@ -195,7 +197,7 @@ export class StoryService {
 
       return { studentPart, aiPart };
     } catch (error: any) {
-      this.logger.error(`AI 이어쓰기 실패: ${error.message}`);
+      this.logger.error(`addPart: AI 이어쓰기 실패 — ${error.message}`, error.stack);
       return { studentPart, aiPart: null, aiError: error.message };
     }
   }
