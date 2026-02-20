@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -13,6 +13,8 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     configService: ConfigService,
     private userService: UserService,
@@ -25,10 +27,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (!payload.sub) {
+      this.logger.warn('JWT payload에 sub 없음');
+      throw new UnauthorizedException('잘못된 토큰입니다');
+    }
+
     const user = await this.userService.findById(payload.sub);
     if (!user) {
-      throw new UnauthorizedException();
+      this.logger.warn(`JWT 사용자 없음: sub=${payload.sub}, role=${payload.role}`);
+      throw new UnauthorizedException('사용자를 찾을 수 없습니다');
     }
+
     return user;
   }
 }

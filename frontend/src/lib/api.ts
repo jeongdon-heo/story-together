@@ -13,6 +13,8 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('[API] accessToken 없음:', config.method?.toUpperCase(), config.url);
     }
   }
   return config;
@@ -69,7 +71,7 @@ api.interceptors.response.use(
 
     if (!refreshToken) {
       isRefreshing = false;
-      // 로그인 페이지로 리다이렉트
+      console.warn('[API] refreshToken 없음 — 로그인 페이지로 이동');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -77,6 +79,8 @@ api.interceptors.response.use(
       }
       return Promise.reject(error);
     }
+
+    console.log('[API] 토큰 갱신 시도...');
 
     try {
       const { data } = await axios.post(
@@ -92,11 +96,13 @@ api.interceptors.response.use(
         localStorage.setItem('refreshToken', newRefreshToken);
       }
 
+      console.log('[API] 토큰 갱신 성공, 원래 요청 재시도');
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       processQueue(null, newAccessToken);
 
       return api(originalRequest);
-    } catch (refreshError) {
+    } catch (refreshError: any) {
+      console.error('[API] 토큰 갱신 실패:', refreshError.response?.status, refreshError.message);
       processQueue(refreshError, null);
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
