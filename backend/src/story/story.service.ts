@@ -228,11 +228,24 @@ export class StoryService {
 
     this.logger.log(`complete: grade=${grade}, parts=${previousParts.length}, totalChars=${previousParts.reduce((s, p) => s + p.content.length, 0)}`);
 
-    const endingText = await this.aiService.generateEnding(
-      previousParts,
-      grade,
-      story.aiCharacter || 'grandmother',
-    );
+    let endingText: string;
+    try {
+      endingText = await this.aiService.generateEnding(
+        previousParts,
+        grade,
+        story.aiCharacter || 'grandmother',
+      );
+    } catch (error: any) {
+      this.logger.error(`complete: AI 결말 생성 실패 — ${error.message}`);
+      // AI 실패 시 이야기 맥락 기반 기본 결말 사용
+      const lastPart = previousParts[previousParts.length - 1];
+      endingText = `그렇게 모든 일이 잘 마무리되었어요. ${lastPart ? '방금 일어난 일들을 떠올리며' : '모험을 되돌아보며'} 주인공은 따뜻한 미소를 지었어요. 오늘 하루는 정말 특별한 하루였답니다. 그리고 그 소중한 기억은 마음속에서 영원히 빛나는 보물이 되었어요.`;
+    }
+
+    if (!endingText || !endingText.trim()) {
+      this.logger.error('complete: 결말 텍스트가 비어있음 — 기본 결말 사용');
+      endingText = '그렇게 모험은 끝이 났어요. 주인공은 모든 것이 잘 마무리되어 기뻤어요. 따뜻한 햇살 아래에서 친구들과 함께 웃으며, 오늘의 특별한 이야기는 마음속 깊이 간직되었답니다.';
+    }
 
     this.logger.log(`complete: 결말 생성 완료 (${endingText.length}자)`);
 

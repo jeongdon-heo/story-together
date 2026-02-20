@@ -229,8 +229,12 @@ ${lastPart ? `[직전 장면 — 여기서 이어서 마무리하세요]\n"${las
 ${storyContext}`;
 
     try {
-      const result = await this.callGeminiText(systemPrompt, previousParts);
-      this.logger.log(`generateEnding 성공: ${result.substring(0, 50)}...`);
+      // systemPrompt에 이야기 전체가 이미 포함되어 있으므로
+      // messages는 단일 user 요청으로 보냄 (Gemini 역할 충돌 방지)
+      const result = await this.callGeminiText(systemPrompt, [
+        { role: 'user', content: '위 이야기의 결말을 작성해주세요.' },
+      ]);
+      this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 80)}...`);
       return result;
     } catch (error: any) {
       const msg = error?.message || String(error);
@@ -621,20 +625,38 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     }
 
     return this.withRetry(async () => {
+      // Gemini API는 첫 메시지가 user여야 함
+      // AI(model)로 시작하는 경우 연속 같은 역할이 오는 경우 병합 처리
+      const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+      for (const m of messages) {
+        const role = m.role === 'assistant' ? 'model' : 'user';
+        const last = contents[contents.length - 1];
+        if (last && last.role === role) {
+          // 같은 역할 연속이면 텍스트 병합 (Gemini 제약)
+          last.parts[0].text += '\n\n' + m.content;
+        } else {
+          contents.push({ role, parts: [{ text: m.content }] });
+        }
+      }
+      // 첫 메시지가 model이면 user로 변환 (Gemini 필수 제약)
+      if (contents.length > 0 && contents[0].role === 'model') {
+        contents[0].role = 'user';
+      }
+
+      this.logger.log(`callGeminiText: contents=${contents.length}개, roles=[${contents.map(c => c.role).join(',')}]`);
+
       const response = await this.client!.models.generateContent({
         model: this.model,
-        contents: messages.map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        })),
+        contents,
         config: {
           systemInstruction: systemPrompt,
         },
       });
 
-      const text = response.text || '';
+      const text = response.text?.trim() || '';
       if (!text) {
-        this.logger.warn('Gemini API 빈 응답 반환');
+        this.logger.error('Gemini API 빈 응답 반환 — 에러로 처리');
+        throw new Error('Gemini API가 빈 응답을 반환했습니다');
       }
       return text;
     });
