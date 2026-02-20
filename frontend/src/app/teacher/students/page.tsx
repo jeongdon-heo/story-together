@@ -69,7 +69,10 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">학생 계정 관리</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <a href="/teacher" className="text-sm text-gray-400 hover:text-gray-700">&larr; 대시보드</a>
+          <h1 className="text-2xl font-bold">학생 계정 관리</h1>
+        </div>
 
         {/* 탭 */}
         <div className="flex gap-2 mb-6">

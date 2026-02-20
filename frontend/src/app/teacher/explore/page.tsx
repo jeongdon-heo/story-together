@@ -53,7 +53,7 @@ export default function TeacherExplorePage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* 헤더 */}
       <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3 flex items-center gap-3 border-b border-green-100">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 text-xl">←</button>
+        <a href="/teacher" className="text-gray-400 hover:text-gray-700 text-xl">←</a>
         <h1 className="font-bold text-gray-900 flex-1">이야기 공개 승인</h1>
         {pending.length > 0 && (
           <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">

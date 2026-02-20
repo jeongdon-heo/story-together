@@ -186,7 +186,7 @@ export default function TeacherStickersPage() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
       {/* 헤더 */}
       <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3 flex items-center gap-3 border-b border-teal-100">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 text-xl">←</button>
+        <a href="/teacher" className="text-gray-400 hover:text-gray-700 text-xl">←</a>
         <h1 className="font-bold text-gray-900 flex-1">칭찬 스티커 관리</h1>
       </div>
 

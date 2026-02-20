@@ -126,12 +126,12 @@ export default function IntrosPage() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <button
-              onClick={() => router.back()}
-              className="text-sm text-gray-500 hover:text-gray-700 mb-1"
+            <a
+              href="/teacher"
+              className="text-sm text-gray-500 hover:text-gray-700 mb-1 block"
             >
-              ← 뒤로
-            </button>
+              &larr; 대시보드
+            </a>
             <h1 className="text-2xl font-bold text-gray-900">도입부 관리</h1>
             <p className="text-sm text-gray-500">같은 시작 모드에 사용할 도입부를 만들고 저장하세요</p>
           </div>
