@@ -228,11 +228,22 @@ export class StoryService {
 
     this.logger.log(`complete: grade=${grade}, parts=${previousParts.length}, totalChars=${previousParts.reduce((s, p) => s + p.content.length, 0)}`);
 
-    const endingText = await this.aiService.generateEnding(
-      previousParts,
-      grade,
-      story.aiCharacter || 'grandmother',
-    );
+    let endingText: string;
+    try {
+      endingText = await this.aiService.generateEnding(
+        previousParts,
+        grade,
+        story.aiCharacter || 'grandmother',
+      );
+    } catch (error: any) {
+      this.logger.error(`complete: generateEnding 실패 — ${error.message}`, error.stack);
+      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요.`);
+    }
+
+    if (!endingText || !endingText.trim()) {
+      this.logger.error('complete: 결말 텍스트가 비어있음');
+      throw new Error('마무리 생성에 실패했습니다. 다시 시도해주세요.');
+    }
 
     this.logger.log(`complete: 결말 생성 완료 (${endingText.length}자)`);
 

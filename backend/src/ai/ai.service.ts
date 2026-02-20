@@ -122,18 +122,20 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
     const lastStudentPart = [...previousParts].reverse().find((p) => p.role === 'user');
     const storyContext = previousParts.map((p) => p.content).join('\n\n');
 
-    const systemPrompt =
-      buildSystemPrompt(grade, aiCharacter) +
-      `\n\n학생이 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요.
+    const systemPrompt = buildSystemPrompt(grade, aiCharacter);
 
-[이야기 전체 맥락]
-${storyContext}`;
+    // 이야기 맥락을 systemInstruction이 아닌 대화 메시지로 전달
+    const messagesWithContext: StoryMessage[] = [
+      { role: 'user', content: `[이야기 전체 맥락]\n${storyContext}\n\n학생이 쓴 내용에 자연스럽게 이어지는 다음 장면을 작성하세요.` },
+      ...previousParts,
+    ];
 
     try {
-      return await this.callGeminiText(systemPrompt, previousParts);
+      return await this.callGeminiText(systemPrompt, messagesWithContext);
     } catch (error: any) {
       const msg = error?.message || String(error);
-      this.logger.error(`이야기 이어쓰기 API 호출 실패: ${msg}`, error?.stack);
+      const status = error?.status || error?.response?.status || 'unknown';
+      this.logger.error(`이야기 이어쓰기 API 호출 실패: status=${status}, msg=${msg}`, error?.stack);
       throw new Error(`AI 응답 생성에 실패했습니다: ${msg}`);
     }
   }
@@ -189,23 +191,29 @@ ${storyContext}`;
       return `[${i + 1}번째 - ${who}]\n${p.content}`;
     }).join('\n\n');
 
-    const systemPrompt =
-      buildSystemPrompt(grade, aiCharacter) +
-      `\n\n이전 이야기 전체 내용을 읽고, 자연스럽게 이어지는 결말을 3~5문장으로 작성하세요. 이모지 사용 금지. 서술형으로 끝내세요.
+    const systemPrompt = buildSystemPrompt(grade, aiCharacter);
+
+    const userMessage = `아래는 학생과 AI가 함께 쓴 이야기 전체 내용입니다. 이 이야기의 자연스러운 결말을 3~5문장으로 작성해주세요. 이모지 사용 금지. 서술형으로 끝내세요.
 
 [이야기 전체 내용]
-${storyContext}`;
+${storyContext}
+
+위 이야기를 읽고 마지막 장면에서 바로 이어지는 결말을 작성해주세요.`;
+
+    this.logger.log(`generateEnding: systemPrompt=${systemPrompt.length}자, userMessage=${userMessage.length}자`);
 
     try {
       const result = await this.callGeminiText(systemPrompt, [
-        { role: 'user', content: '위 이야기 전체 내용을 읽고, 마지막 장면에서 바로 이어지는 자연스러운 결말을 작성해주세요.' },
+        { role: 'user', content: userMessage },
       ]);
-      this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 80)}...`);
+      this.logger.log(`generateEnding 성공 (${result.length}자): ${result.substring(0, 100)}...`);
       return result;
     } catch (error: any) {
       const msg = error?.message || String(error);
-      this.logger.error(`generateEnding 실패: ${msg}`, error?.stack);
-      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요.`);
+      const status = error?.status || error?.response?.status || 'unknown';
+      const body = error?.response?.data ? JSON.stringify(error.response.data).substring(0, 500) : 'N/A';
+      this.logger.error(`generateEnding 실패: status=${status}, msg=${msg}, body=${body}`, error?.stack);
+      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요. (${msg})`);
     }
   }
 
@@ -621,17 +629,25 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
 
       this.logger.log(`callGeminiText: contents=${contents.length}개, roles=[${contents.map(c => c.role).join(',')}]`);
 
-      const response = await this.client!.models.generateContent({
-        model: this.model,
-        contents,
-        config: {
-          systemInstruction: systemPrompt,
-        },
-      });
+      let response: any;
+      try {
+        response = await this.client!.models.generateContent({
+          model: this.model,
+          contents,
+          config: {
+            systemInstruction: systemPrompt,
+          },
+        });
+      } catch (apiError: any) {
+        const status = apiError?.status || apiError?.response?.status || 'unknown';
+        const errMsg = apiError?.message || String(apiError);
+        this.logger.error(`Gemini API 호출 에러: status=${status}, model=${this.model}, contentsLen=${contents.length}, sysPromptLen=${systemPrompt.length}, msg=${errMsg}`);
+        throw apiError;
+      }
 
       const text = response.text?.trim() || '';
       if (!text) {
-        this.logger.error('Gemini API 빈 응답 반환 — 에러로 처리');
+        this.logger.error(`Gemini API 빈 응답: model=${this.model}, contents=${JSON.stringify(contents).substring(0, 200)}`);
         throw new Error('Gemini API가 빈 응답을 반환했습니다');
       }
       return text;
