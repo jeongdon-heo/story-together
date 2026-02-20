@@ -1,11 +1,9 @@
 import axios from 'axios';
 
 export function getBaseURL() {
-  // 브라우저: 상대 경로 /api → Next.js rewrites가 백엔드로 프록시
-  // 서버(SSR): 환경변수 또는 localhost 직접 호출
-  if (typeof window !== 'undefined') {
-    return '/api';
-  }
+  // NEXT_PUBLIC_API_URL은 빌드 시 JS에 임베드됨
+  // Vercel: https://story-together-production.up.railway.app → /api 붙여서 직접 호출
+  // 로컬: http://localhost:4000 → /api 붙여서 직접 호출
   const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
   return raw.endsWith('/api') ? raw : raw + '/api';
 }

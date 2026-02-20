@@ -625,22 +625,32 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     }
 
     return this.withRetry(async () => {
-      // Gemini API는 첫 메시지가 user여야 함
-      // AI(model)로 시작하는 경우 연속 같은 역할이 오는 경우 병합 처리
+      // Gemini API 제약: 첫 메시지는 user, 역할은 반드시 번갈아야 함
+      // 1단계: 역할 변환 (assistant → model)
+      const raw = messages.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        text: m.content,
+      }));
+
+      // 2단계: 첫 메시지가 model이면 user로 변환
+      if (raw.length > 0 && raw[0].role === 'model') {
+        raw[0].role = 'user';
+      }
+
+      // 3단계: 연속 같은 역할 병합 (role 변환 후에 수행)
       const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
-      for (const m of messages) {
-        const role = m.role === 'assistant' ? 'model' : 'user';
+      for (const m of raw) {
         const last = contents[contents.length - 1];
-        if (last && last.role === role) {
-          // 같은 역할 연속이면 텍스트 병합 (Gemini 제약)
-          last.parts[0].text += '\n\n' + m.content;
+        if (last && last.role === m.role) {
+          last.parts[0].text += '\n\n' + m.text;
         } else {
-          contents.push({ role, parts: [{ text: m.content }] });
+          contents.push({ role: m.role, parts: [{ text: m.text }] });
         }
       }
-      // 첫 메시지가 model이면 user로 변환 (Gemini 필수 제약)
-      if (contents.length > 0 && contents[0].role === 'model') {
-        contents[0].role = 'user';
+
+      // 4단계: 최종 검증 — 비어있으면 기본 user 메시지 추가
+      if (contents.length === 0) {
+        contents.push({ role: 'user', parts: [{ text: '이야기를 이어주세요.' }] });
       }
 
       this.logger.log(`callGeminiText: contents=${contents.length}개, roles=[${contents.map(c => c.role).join(',')}]`);
