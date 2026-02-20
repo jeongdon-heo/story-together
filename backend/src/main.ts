@@ -17,7 +17,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: ['https://story-together.vercel.app', 'https://story-together-git-master-jeongdons-projects.vercel.app', 'https://story-together-fxn85fc43-jeongdons-projects.vercel.app'],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
