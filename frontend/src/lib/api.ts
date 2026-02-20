@@ -3,15 +3,9 @@ import axios from 'axios';
 export function getBaseURL(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
   let base = envUrl && envUrl.length > 0 ? envUrl : 'http://localhost:4000';
-  // 항상 /api로 끝나도록 보장
-  base = base.replace(/\/+$/, ''); // 후행 슬래시 제거
-  if (!base.endsWith('/api')) {
-    base = base + '/api';
-  }
-  return base;
+  return base.replace(/\/+$/, '');
 }
 
-// 빌드 시 인라인 최적화 방지를 위해 즉시 계산
 const API_BASE_URL = getBaseURL();
 
 const api = axios.create({
