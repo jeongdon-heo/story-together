@@ -61,6 +61,10 @@ export default function SoloStoryPage() {
         return;
       }
 
+      if (res.data.aiError) {
+        setError(`AI 응답 생성에 실패했습니다. 다시 시도해주세요. (${res.data.aiError})`);
+      }
+
       setInputText('');
       setShowHints(false);
       setHints([]);

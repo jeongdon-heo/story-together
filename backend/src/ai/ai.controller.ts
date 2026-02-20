@@ -128,6 +128,12 @@ export class AiController {
     return { data: this.aiService.getStatus() };
   }
 
+  @Public()
+  @Get('test')
+  async testGemini() {
+    return { data: await this.aiService.testCall() };
+  }
+
   @Post('generate-themes')
   async generateThemes(@Body() dto: GenerateThemesDto) {
     const themes = await this.aiService.generateThemes(dto.grade);

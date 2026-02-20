@@ -176,23 +176,28 @@ export class StoryService {
     }));
     previousParts.push({ role: 'user', content: text });
 
-    const aiText = await this.aiService.continueStory(
-      previousParts,
-      grade,
-      story.aiCharacter || 'grandmother',
-    );
+    try {
+      const aiText = await this.aiService.continueStory(
+        previousParts,
+        grade,
+        story.aiCharacter || 'grandmother',
+      );
 
-    const aiPart = await this.prisma.storyPart.create({
-      data: {
-        storyId,
-        authorType: 'ai',
-        text: aiText,
-        order: nextOrder + 1,
-        metadata: { mood: 'adventure' },
-      },
-    });
+      const aiPart = await this.prisma.storyPart.create({
+        data: {
+          storyId,
+          authorType: 'ai',
+          text: aiText,
+          order: nextOrder + 1,
+          metadata: { mood: 'adventure' },
+        },
+      });
 
-    return { studentPart, aiPart };
+      return { studentPart, aiPart };
+    } catch (error: any) {
+      this.logger.error(`AI 이어쓰기 실패: ${error.message}`);
+      return { studentPart, aiPart: null, aiError: error.message };
+    }
   }
 
   // 이야기 완료 (결말 생성)

@@ -144,10 +144,10 @@ ${storyContext}`;
 
     try {
       return await this.callGeminiText(systemPrompt, previousParts);
-    } catch (error) {
-      this.logger.error('이야기 이어쓰기 API 호출 실패:', error instanceof Error ? error.message : error);
-      const idx = previousParts.length % this.fallbackContinuations.length;
-      return this.fallbackContinuations[idx];
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      this.logger.error(`이야기 이어쓰기 API 호출 실패: ${msg}`, error?.stack);
+      throw new Error(`AI 응답 생성에 실패했습니다: ${msg}`);
     }
   }
 
@@ -166,6 +166,27 @@ ${storyContext}`;
   // Gemini API 상태 확인
   getStatus(): { initialized: boolean; model: string } {
     return { initialized: !!this.client, model: this.model };
+  }
+
+  // Gemini API 실제 호출 테스트
+  async testCall(): Promise<{ success: boolean; response?: string; error?: string }> {
+    if (!this.client) {
+      return { success: false, error: 'Gemini client not initialized (no API key)' };
+    }
+    try {
+      const response = await this.client.models.generateContent({
+        model: this.model,
+        contents: [{ role: 'user', parts: [{ text: '안녕하세요. 한 문장으로 짧게 대답해주세요.' }] }],
+      });
+      const text = response.text || '';
+      this.logger.log(`Gemini 테스트 성공: ${text.substring(0, 100)}`);
+      return { success: true, response: text };
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      const status = error?.status || error?.response?.status || 'unknown';
+      this.logger.error(`Gemini 테스트 실패: status=${status}, message=${msg}`);
+      return { success: false, error: `${status}: ${msg}` };
+    }
   }
 
   // 결말 생성
@@ -209,12 +230,10 @@ ${storyContext}`;
       const result = await this.callGeminiText(systemPrompt, previousParts);
       this.logger.log(`generateEnding 성공: ${result.substring(0, 50)}...`);
       return result;
-    } catch (error) {
-      this.logger.error(`generateEnding 실패 — grade=${grade}, partsCount=${previousParts.length}, error:`, error instanceof Error ? error.message : error);
-      this.logger.error('generateEnding 스택:', error instanceof Error ? error.stack : '');
-      const idx = previousParts.length % this.fallbackEndings.length;
-      this.logger.warn(`폴백 결말 사용 (index=${idx})`);
-      return this.fallbackEndings[idx];
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      this.logger.error(`generateEnding 실패: ${msg}`, error?.stack);
+      throw new Error(`AI 결말 생성에 실패했습니다: ${msg}`);
     }
   }
 
