@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import {
   IsInt,
   IsString,
@@ -120,6 +120,11 @@ export class AiController {
     private aiService: AiService,
     private prisma: PrismaService,
   ) {}
+
+  @Get('status')
+  getStatus() {
+    return { data: this.aiService.getStatus() };
+  }
 
   @Post('generate-themes')
   async generateThemes(@Body() dto: GenerateThemesDto) {

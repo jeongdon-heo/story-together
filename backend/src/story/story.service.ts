@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +11,8 @@ import { CreateStoryDto } from './dto/create-story.dto';
 
 @Injectable()
 export class StoryService {
+  private readonly logger = new Logger(StoryService.name);
+
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
@@ -194,6 +197,8 @@ export class StoryService {
 
   // 이야기 완료 (결말 생성)
   async complete(storyId: string, userId: string) {
+    this.logger.log(`complete 호출: storyId=${storyId}, userId=${userId}`);
+
     const story = await this.prisma.story.findUniqueOrThrow({
       where: { id: storyId },
       include: {
@@ -216,11 +221,15 @@ export class StoryService {
       content: p.text,
     }));
 
+    this.logger.log(`complete: grade=${grade}, parts=${previousParts.length}, totalChars=${previousParts.reduce((s, p) => s + p.content.length, 0)}`);
+
     const endingText = await this.aiService.generateEnding(
       previousParts,
       grade,
       story.aiCharacter || 'grandmother',
     );
+
+    this.logger.log(`complete: 결말 생성 완료 (${endingText.length}자)`);
 
     const nextOrder = story.parts.length + 1;
 

@@ -146,25 +146,42 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
     { text: '위기를 용기로 극복해보세요', direction: '모험' },
   ];
 
+  // Gemini API 상태 확인
+  getStatus(): { initialized: boolean; model: string } {
+    return { initialized: !!this.client, model: this.model };
+  }
+
   // 결말 생성
   async generateEnding(
     previousParts: StoryMessage[],
     grade: number,
     aiCharacter: string,
   ): Promise<string> {
+    this.logger.log(`generateEnding 호출: grade=${grade}, parts=${previousParts.length}, aiCharacter=${aiCharacter}, geminiReady=${!!this.client}`);
+
+    const storyContext = previousParts.map((p) => p.content).join('\n\n');
+
     const systemPrompt =
       buildSystemPrompt(grade, aiCharacter) +
       `\n\n이제 이 이야기를 아름답게 마무리해주세요.
+- 지금까지의 이야기 흐름과 등장인물을 고려해서 자연스러운 결말을 만드세요.
 - 모든 갈등이 해결되도록 하세요.
 - 등장인물들이 무엇을 배웠는지 자연스럽게 보여주세요.
 - 따뜻하고 희망적인 결말을 만들어주세요.
-- "그리하여" 또는 "그래서" 등으로 자연스럽게 끝맺으세요.`;
+- "그리하여" 또는 "그래서" 등으로 자연스럽게 끝맺으세요.
+
+[이야기 전체 내용]
+${storyContext}`;
 
     try {
-      return await this.callGeminiText(systemPrompt, previousParts);
+      const result = await this.callGeminiText(systemPrompt, previousParts);
+      this.logger.log(`generateEnding 성공: ${result.substring(0, 50)}...`);
+      return result;
     } catch (error) {
-      this.logger.warn('결말 생성 API 호출 실패, 기본 텍스트 사용:', error);
+      this.logger.error(`generateEnding 실패 — grade=${grade}, partsCount=${previousParts.length}, error:`, error instanceof Error ? error.message : error);
+      this.logger.error('generateEnding 스택:', error instanceof Error ? error.stack : '');
       const idx = previousParts.length % this.fallbackEndings.length;
+      this.logger.warn(`폴백 결말 사용 (index=${idx})`);
       return this.fallbackEndings[idx];
     }
   }
