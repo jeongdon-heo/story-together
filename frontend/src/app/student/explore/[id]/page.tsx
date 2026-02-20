@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toBackendURL } from '../../../../lib/api';
 import {
   publishApi,
   type PublishedStoryDetail,
@@ -130,7 +131,7 @@ export default function ExploreDetailPage() {
         {/* 표지 이미지 */}
         {cover && (
           <div className="rounded-2xl overflow-hidden mb-5 shadow-lg">
-            <img src={cover.imageUrl} alt="표지" className="w-full object-cover max-h-72" />
+            <img src={toBackendURL(cover.imageUrl)} alt="표지" className="w-full object-cover max-h-72" />
           </div>
         )}
 

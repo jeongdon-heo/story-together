@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toBackendURL } from '@/lib/api';
 import {
   generateTts,
   generateBgm,
@@ -474,7 +475,7 @@ export default function ListenPage() {
                       >
                         <audio
                           controls
-                          src={track.audioUrl}
+                          src={toBackendURL(track.audioUrl)}
                           className="w-full h-10"
                           onPlay={() => setPlayingTrackId(track.id)}
                           onPause={() => setPlayingTrackId(null)}

@@ -8,6 +8,15 @@ export function getBaseURL(): string {
 
 const API_BASE_URL = getBaseURL();
 
+/** Convert backend-relative paths (e.g. /uploads/...) to full backend URLs */
+export function toBackendURL(relativePath: string): string {
+  if (!relativePath) return '';
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+  return `${API_BASE_URL}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,

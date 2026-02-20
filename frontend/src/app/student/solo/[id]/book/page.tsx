@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toBackendURL } from '../../../../../lib/api';
 import { storyApi } from '../../../../../lib/story-api';
 import { getStoryIllustrations, STYLE_LABELS, type IllustrationItem } from '../../../../../lib/illustration-api';
 import type { Story, StoryPart } from '../../../../../types/story';
@@ -84,7 +85,7 @@ export default function StoryBookPage() {
         {cover ? (
           <div className="relative">
             <img
-              src={cover.imageUrl}
+              src={toBackendURL(cover.imageUrl)}
               alt="동화책 표지"
               className="w-full aspect-square object-cover"
             />
@@ -143,7 +144,7 @@ export default function StoryBookPage() {
                 {illustAfter && (
                   <div className="mt-4">
                     <img
-                      src={illustAfter.imageUrl}
+                      src={toBackendURL(illustAfter.imageUrl)}
                       alt={illustAfter.sceneText || '이야기 장면'}
                       className="w-full rounded-2xl object-cover aspect-video shadow-md"
                     />

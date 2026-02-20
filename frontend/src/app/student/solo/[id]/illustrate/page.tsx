@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { toBackendURL } from '@/lib/api';
 import {
   analyzeScenes,
   generateIllustration,
@@ -211,7 +212,7 @@ export default function IllustratePage() {
             cover.imageUrl ? (
               <div className="relative group">
                 <img
-                  src={cover.imageUrl}
+                  src={toBackendURL(cover.imageUrl)}
                   alt="동화책 표지"
                   className="w-full rounded-xl object-cover aspect-square"
                 />
@@ -317,7 +318,7 @@ export default function IllustratePage() {
                       existingIllust.imageUrl ? (
                         <div className="mt-3 relative group">
                           <img
-                            src={existingIllust.imageUrl}
+                            src={toBackendURL(existingIllust.imageUrl)}
                             alt={scene.text}
                             className="w-full rounded-xl object-cover aspect-video"
                           />
