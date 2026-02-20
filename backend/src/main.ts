@@ -17,14 +17,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:3003',
-      'https://story-together.vercel.app',
-      'https://story-together-git-master-jeongdons-projects.vercel.app',
-    ],
+    origin: true,
     credentials: true,
   });
 
