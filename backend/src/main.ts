@@ -1,12 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import * as path from 'path';
 import * as fs from 'fs';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // TTS 오디오 파일 저장 디렉토리 생성 + 정적 서빙
@@ -15,7 +19,7 @@ async function bootstrap() {
   app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
 
   app.enableCors({
-    origin: true,
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -23,6 +27,19 @@ async function bootstrap() {
 
   // Socket.IO 어댑터 설정
   app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Swagger 설정
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('이야기 함께 짓기 API')
+    .setDescription('Story Together - 협업 글쓰기 교육용 웹앱 API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
+  // 글로벌 예외 필터
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -32,8 +49,12 @@ async function bootstrap() {
     }),
   );
 
+  // Graceful shutdown
+  app.enableShutdownHooks();
+
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`Server running on http://localhost:${port}`);
+  logger.log(`Server running on http://localhost:${port}`);
+  logger.log(`Swagger docs at http://localhost:${port}/api/docs`);
 }
 bootstrap();
