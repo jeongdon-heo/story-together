@@ -176,36 +176,88 @@ export class IllustrationService {
 
       this.logger.log(`이미지 프롬프트: ${finalPrompt}`);
 
-      // 3. 이미지 생성 시도 (Imagen 3) → 실패 시 텍스트 설명으로 대체
+      // 3. 이미지 생성: gemini-2.5-flash 시도 → 실패 시 Imagen REST API → 실패 시 텍스트 대체
       let imageUrl = '';
+      const apiKey = this.configService.get<string>('GEMINI_API_KEY');
 
+      // 옵션 1: Gemini 2.5 Flash (generateContent + IMAGE modality)
       if (this.genai) {
         try {
-          const response = await this.genai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
-            prompt: finalPrompt,
+          this.logger.log('이미지 생성 시도: gemini-2.5-flash-preview-05-20');
+          const response = await this.genai.models.generateContent({
+            model: 'gemini-2.5-flash-preview-05-20',
+            contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
             config: {
-              numberOfImages: 1,
+              responseModalities: ['TEXT', 'IMAGE'],
             },
           });
 
-          const generated = (response as any).generatedImages;
-          if (generated && generated.length > 0 && generated[0].image?.imageBytes) {
-            const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
-            if (!fs.existsSync(uploadsDir)) {
-              fs.mkdirSync(uploadsDir, { recursive: true });
+          const candidates = (response as any).candidates;
+          if (candidates && candidates.length > 0) {
+            const parts = candidates[0].content?.parts;
+            if (parts) {
+              for (const part of parts) {
+                if (part.inlineData && part.inlineData.data) {
+                  const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
+                  if (!fs.existsSync(uploadsDir)) {
+                    fs.mkdirSync(uploadsDir, { recursive: true });
+                  }
+                  const filename = `${jobId}.png`;
+                  const filePath = path.join(uploadsDir, filename);
+                  const buffer = Buffer.from(part.inlineData.data, 'base64');
+                  fs.writeFileSync(filePath, buffer);
+                  imageUrl = `/uploads/illustrations/${filename}`;
+                  this.logger.log('gemini-2.5-flash 이미지 생성 성공');
+                  break;
+                }
+              }
             }
-
-            const filename = `${jobId}.png`;
-            const filePath = path.join(uploadsDir, filename);
-            const buffer = Buffer.from(generated[0].image.imageBytes, 'base64');
-            fs.writeFileSync(filePath, buffer);
-
-            imageUrl = `/uploads/illustrations/${filename}`;
           }
-        } catch (imgError: any) {
-          this.logger.warn(`Imagen 3 이미지 생성 실패 (텍스트 설명으로 대체): ${imgError.message}`);
+        } catch (err1: any) {
+          this.logger.warn(`gemini-2.5-flash 이미지 생성 실패: ${err1.message}`);
         }
+      }
+
+      // 옵션 2: Imagen 3 REST API 직접 호출
+      if (!imageUrl && apiKey) {
+        try {
+          this.logger.log('이미지 생성 시도: imagen-3.0-generate-002 REST API');
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instances: [{ prompt: finalPrompt }],
+                parameters: { aspectRatio: '4:3', sampleCount: 1 },
+              }),
+            },
+          );
+          if (res.ok) {
+            const json = await res.json();
+            const b64 = json.predictions?.[0]?.bytesBase64Encoded;
+            if (b64) {
+              const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
+              if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+              }
+              const filename = `${jobId}.png`;
+              const filePath = path.join(uploadsDir, filename);
+              fs.writeFileSync(filePath, Buffer.from(b64, 'base64'));
+              imageUrl = `/uploads/illustrations/${filename}`;
+              this.logger.log('imagen-3.0 REST API 이미지 생성 성공');
+            }
+          } else {
+            const errText = await res.text();
+            this.logger.warn(`imagen-3.0 REST API 실패 (${res.status}): ${errText}`);
+          }
+        } catch (err2: any) {
+          this.logger.warn(`imagen-3.0 REST API 호출 실패: ${err2.message}`);
+        }
+      }
+
+      if (!imageUrl) {
+        this.logger.warn(`이미지 생성 모두 실패 — 텍스트 설명으로 대체, jobId=${jobId}`);
       }
 
       // 4. DB 저장
