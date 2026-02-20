@@ -42,6 +42,8 @@ export default function SessionsPage() {
     mode: 'solo',
     title: '',
     introText: '',       // same_start 전용
+    participationType: 'individual' as string,
+    groupCount: 4,
   });
   const [creating, setCreating] = useState(false);
 
@@ -94,14 +96,22 @@ export default function SessionsPage() {
       if (form.mode === 'same_start') {
         themeData.introText = form.introText.trim();
       }
+      const settings: Record<string, any> = {};
+      if (form.mode === 'same_start') {
+        settings.participationType = form.participationType;
+        if (form.participationType === 'group') {
+          settings.groupCount = form.groupCount;
+        }
+      }
       const sess = await createSession({
         classId: form.classId || undefined,
         mode: form.mode,
         title: form.title || undefined,
         themeData,
+        settings,
       });
       setShowCreate(false);
-      setForm({ classId: '', mode: 'solo', title: '', introText: '' });
+      setForm({ classId: '', mode: 'solo', title: '', introText: '', participationType: 'individual', groupCount: 4 });
       router.push(`/teacher/sessions/${sess.id}`);
     } finally {
       setCreating(false);
@@ -219,6 +229,58 @@ export default function SessionsPage() {
                   <p className="text-[11px] text-amber-600 mt-1">
                     모든 학생이 이 도입부로 시작해 각자 다른 이야기를 씁니다
                   </p>
+
+                  {/* 참여 방식 선택 */}
+                  <div className="mt-3 pt-3 border-t border-amber-200">
+                    <label className="text-xs font-semibold text-amber-700 mb-2 block">참여 방식</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, participationType: 'individual' }))}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          form.participationType !== 'group'
+                            ? 'border-amber-500 bg-amber-50'
+                            : 'border-gray-100 hover:border-amber-200'
+                        }`}
+                      >
+                        <span className="text-lg">👤</span>
+                        <span className="text-sm font-semibold text-gray-800 ml-2">개인별</span>
+                        <p className="text-[10px] text-gray-500 mt-1">각자 이야기를 씁니다</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, participationType: 'group', groupCount: f.groupCount || 4 }))}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          form.participationType === 'group'
+                            ? 'border-amber-500 bg-amber-50'
+                            : 'border-gray-100 hover:border-amber-200'
+                        }`}
+                      >
+                        <span className="text-lg">👥</span>
+                        <span className="text-sm font-semibold text-gray-800 ml-2">모둠별</span>
+                        <p className="text-[10px] text-gray-500 mt-1">모둠이 함께 이야기를 씁니다</p>
+                      </button>
+                    </div>
+                    {form.participationType === 'group' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <label className="text-xs text-amber-600">모둠 수</label>
+                        <input
+                          type="number"
+                          min={2}
+                          max={10}
+                          value={form.groupCount}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              groupCount: Math.max(2, Math.min(10, Number(e.target.value))),
+                            }))
+                          }
+                          className="w-20 border border-amber-300 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        />
+                        <span className="text-xs text-amber-600">개 (2~10)</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -276,7 +338,7 @@ export default function SessionsPage() {
                   onClick={() => {
                     setShowCreate(false);
                     setShowIntroLibrary(false);
-                    setForm({ classId: '', mode: 'solo', title: '', introText: '' });
+                    setForm({ classId: '', mode: 'solo', title: '', introText: '', participationType: 'individual', groupCount: 4 });
                   }}
                   className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50"
                 >

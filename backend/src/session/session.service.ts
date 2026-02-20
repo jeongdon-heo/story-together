@@ -65,13 +65,24 @@ export class SessionService {
       }
     }
 
+    // 모둠 모드: groups 초기화
+    let settings = dto.settings || {};
+    if (dto.mode === 'same_start' && settings.participationType === 'group') {
+      const groupCount = Math.max(2, Math.min(10, settings.groupCount || 4));
+      const groups: Record<string, { name: string; memberIds: string[] }> = {};
+      for (let i = 1; i <= groupCount; i++) {
+        groups[String(i)] = { name: `${i}모둠`, memberIds: [] };
+      }
+      settings = { ...settings, groupCount, groups };
+    }
+
     const session = await this.prisma.session.create({
       data: {
         classId: dto.classId,
         mode: dto.mode,
         title: dto.title,
         themeData: dto.themeData,
-        settings: dto.settings || {},
+        settings,
         status: 'active',
         ...(shortCode && { shortCode }),
       },
@@ -134,6 +145,66 @@ export class SessionService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  // 모둠 참여
+  async joinGroup(sessionId: string, userId: string, groupNumber: number) {
+    const session = await this.prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    const settings = (session.settings as Record<string, any>) || {};
+
+    if (settings.participationType !== 'group') {
+      throw new ForbiddenException('이 세션은 모둠 모드가 아닙니다');
+    }
+    if (groupNumber < 1 || groupNumber > (settings.groupCount || 1)) {
+      throw new ForbiddenException('유효하지 않은 모둠 번호입니다');
+    }
+
+    const groups = settings.groups || {};
+
+    // 기존 모둠에서 제거
+    for (const key of Object.keys(groups)) {
+      if (groups[key].memberIds) {
+        groups[key].memberIds = groups[key].memberIds.filter(
+          (id: string) => id !== userId,
+        );
+      }
+    }
+
+    // 새 모둠에 추가
+    const groupKey = String(groupNumber);
+    if (!groups[groupKey]) {
+      groups[groupKey] = { name: `${groupNumber}모둠`, memberIds: [] };
+    }
+    if (!groups[groupKey].memberIds.includes(userId)) {
+      groups[groupKey].memberIds.push(userId);
+    }
+
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { settings: { ...settings, groups } },
+    });
+
+    return { groupNumber, groupName: groups[groupKey].name };
+  }
+
+  // 내 모둠 조회
+  async getMyGroup(sessionId: string, userId: string) {
+    const session = await this.prisma.session.findUniqueOrThrow({
+      where: { id: sessionId },
+    });
+    const settings = (session.settings as Record<string, any>) || {};
+
+    if (settings.participationType !== 'group') return null;
+
+    const groups = settings.groups || {};
+    for (const [key, group] of Object.entries(groups)) {
+      if ((group as any).memberIds?.includes(userId)) {
+        return { groupNumber: Number(key), groupName: (group as any).name };
+      }
+    }
+    return null;
   }
 
   async updateStatus(

@@ -55,6 +55,27 @@ export class SessionController {
     return { data };
   }
 
+  // 모둠 참여
+  @Post(':id/join-group')
+  async joinGroup(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body('groupNumber') groupNumber: number,
+  ) {
+    const data = await this.sessionService.joinGroup(id, user.id, groupNumber);
+    return { data };
+  }
+
+  // 내 모둠 조회
+  @Get(':id/my-group')
+  async getMyGroup(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    const data = await this.sessionService.getMyGroup(id, user.id);
+    return { data };
+  }
+
   @Post(':id/pause')
   @Roles('teacher')
   async pause(@CurrentUser() user: User, @Param('id') id: string) {

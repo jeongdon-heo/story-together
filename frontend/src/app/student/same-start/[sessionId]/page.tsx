@@ -22,6 +22,8 @@ export default function SameStartStoryPage() {
   const [showHints, setShowHints] = useState(false);
   const [error, setError] = useState('');
   const [completing, setCompleting] = useState(false);
+  const [myGroup, setMyGroup] = useState<{ groupNumber: number; groupName: string } | null>(null);
+  const [joiningGroup, setJoiningGroup] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 세션 및 이야기 로드
@@ -30,6 +32,16 @@ export default function SameStartStoryPage() {
       try {
         const sessionRes = await sameStartApi.getSession(sessionId);
         setSession(sessionRes.data);
+
+        const isGroupMode = sessionRes.data.settings?.participationType === 'group';
+
+        // 모둠 모드: 내 모둠 확인
+        if (isGroupMode) {
+          try {
+            const groupRes = await sameStartApi.getMyGroup(sessionId);
+            if (groupRes.data) setMyGroup(groupRes.data);
+          } catch {}
+        }
 
         // 내 이야기 조회 (이미 있으면 불러오기)
         const storiesRes = await sameStartApi.getMyStory(sessionId);
@@ -44,6 +56,22 @@ export default function SameStartStoryPage() {
     };
     load();
   }, [sessionId, router]);
+
+  const handleJoinGroup = async (groupNumber: number) => {
+    setJoiningGroup(true);
+    setError('');
+    try {
+      const res = await sameStartApi.joinGroup(sessionId, groupNumber);
+      setMyGroup(res.data);
+      // 세션 다시 로드 (멤버 수 업데이트)
+      const sessionRes = await sameStartApi.getSession(sessionId);
+      setSession(sessionRes.data);
+    } catch (err: any) {
+      setError(err.response?.data?.message || '모둠 참여에 실패했습니다');
+    } finally {
+      setJoiningGroup(false);
+    }
+  };
 
   // 자동 스크롤
   useEffect(() => {
@@ -130,6 +158,9 @@ export default function SameStartStoryPage() {
     );
   }
 
+  const isGroupMode = session?.settings?.participationType === 'group';
+  const needsGroupSelection = isGroupMode && !myGroup;
+
   // 이야기 시작 전 - 도입부 보여주기
   if (!story) {
     return (
@@ -141,7 +172,9 @@ export default function SameStartStoryPage() {
               {session?.title || '같은 시작, 다른 결말'}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              아래 도입부로 시작해서 나만의 이야기를 써 보세요!
+              {isGroupMode
+                ? '모둠 친구들과 함께 이야기를 만들어 보세요!'
+                : '아래 도입부로 시작해서 나만의 이야기를 써 보세요!'}
             </p>
           </div>
 
@@ -152,9 +185,51 @@ export default function SameStartStoryPage() {
             </div>
           )}
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* 모둠 선택 (모둠 모드일 때) */}
+          {needsGroupSelection && (
+            <div className="mb-6">
+              <p className="text-sm font-bold text-gray-700 mb-3 text-center">👥 모둠을 선택하세요</p>
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from(
+                  { length: session.settings.groupCount || 4 },
+                  (_, i) => i + 1,
+                ).map((num) => {
+                  const group = session.settings.groups?.[String(num)];
+                  const memberCount = group?.memberIds?.length || 0;
+                  return (
+                    <button
+                      key={num}
+                      onClick={() => handleJoinGroup(num)}
+                      disabled={joiningGroup}
+                      className="p-4 rounded-xl border-2 border-amber-200 hover:border-amber-500 hover:bg-amber-50 transition-all disabled:opacity-50"
+                    >
+                      <p className="text-base font-bold text-gray-800">{num}모둠</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{memberCount}명 참여 중</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 모둠 선택 완료 표시 */}
+          {isGroupMode && myGroup && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center">
+              <p className="text-sm font-bold text-green-700">
+                ✅ {myGroup.groupName}에 참여했어요!
+              </p>
+            </div>
+          )}
+
           <button
             onClick={handleStart}
-            disabled={starting}
+            disabled={starting || needsGroupSelection}
             className="w-full py-4 bg-amber-500 text-white rounded-2xl font-bold text-lg hover:bg-amber-600 disabled:opacity-50"
           >
             {starting ? '시작 중...' : '이야기 시작하기! ✏️'}

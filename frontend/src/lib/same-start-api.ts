@@ -77,6 +77,23 @@ export const sameStartApi = {
       .get<ApiResponse<Story[]>>('/stories', { params: { sessionId } })
       .then((r) => r.data),
 
+  // ─── 모둠 ─────────────────────────────────────────────
+
+  joinGroup: (sessionId: string, groupNumber: number) =>
+    api
+      .post<ApiResponse<{ groupNumber: number; groupName: string }>>(
+        `/sessions/${sessionId}/join-group`,
+        { groupNumber },
+      )
+      .then((r) => r.data),
+
+  getMyGroup: (sessionId: string) =>
+    api
+      .get<ApiResponse<{ groupNumber: number; groupName: string } | null>>(
+        `/sessions/${sessionId}/my-group`,
+      )
+      .then((r) => r.data),
+
   // ─── 갤러리 ──────────────────────────────────────────
 
   getGallery: (sessionId: string) =>
