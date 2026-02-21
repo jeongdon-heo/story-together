@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { exportApi, type ExportJob, type ExportableStory } from '../../../../lib/export-api';
 import { getSessions, type Session } from '../../../../lib/teacher-api';
 import { classApi } from '../../../../lib/class-api';
+import { toBackendURL } from '../../../../lib/api';
 import type { ClassRoom } from '../../../../types/class';
 
 export default function CollectionExportPage() {
@@ -210,7 +211,7 @@ export default function CollectionExportPage() {
                 </div>
                 {job.fileUrl && (
                   <button
-                    onClick={() => window.open(job.fileUrl!, '_blank')}
+                    onClick={() => window.open(toBackendURL(job.fileUrl!), '_blank')}
                     className="text-xs bg-green-500 text-white rounded-xl px-4 py-2 font-bold hover:bg-green-600"
                   >
                     📖 열기
