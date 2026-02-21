@@ -190,6 +190,22 @@ export class RealtimeGateway
     @MessageBody()
     data: { storyId: string; sessionId: string; turnSeconds?: number },
   ) {
+    // 클라이언트가 아직 룸에 없을 수 있으므로 자동 join
+    const room = `story:${data.storyId}`;
+    await client.join(room);
+
+    const userId = (client as any).userId;
+    if (userId) {
+      this.socketMeta.set(client.id, { userId, storyId: data.storyId });
+      this.relayService.joinSession(data.storyId, {
+        userId,
+        name: '학생',
+        color: '#6366f1',
+        socketId: client.id,
+        online: true,
+      });
+    }
+
     await this.relayService.startRelay(
       data.storyId,
       data.sessionId,
