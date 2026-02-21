@@ -8,8 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
-import * as fs from 'fs';
-import * as path from 'path';
+
 
 export const STYLE_SUFFIXES: Record<string, string> = {
   crayon:
@@ -151,16 +150,9 @@ export class IllustrationService {
     return { jobId, status: 'processing' };
   }
 
-  // base64 이미지 데이터를 파일로 저장하고 URL 반환
-  private async saveBase64Image(jobId: string, base64Data: string): Promise<string> {
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'illustrations');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-    const filename = `${jobId}.png`;
-    const filePath = path.join(uploadsDir, filename);
-    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-    return `/uploads/illustrations/${filename}`;
+  // base64 이미지 데이터를 data URL로 변환 (DB에 직접 저장, 파일시스템 불필요)
+  private async saveBase64Image(_jobId: string, base64Data: string): Promise<string> {
+    return `data:image/png;base64,${base64Data}`;
   }
 
   // --- 실제 이미지 생성 처리 ---

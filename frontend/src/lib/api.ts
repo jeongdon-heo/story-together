@@ -11,7 +11,7 @@ const API_BASE_URL = getBaseURL();
 /** Convert backend-relative paths (e.g. /uploads/...) to full backend URLs */
 export function toBackendURL(relativePath: string): string {
   if (!relativePath) return '';
-  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://') || relativePath.startsWith('data:')) {
     return relativePath;
   }
   return `${API_BASE_URL}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;

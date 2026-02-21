@@ -163,7 +163,7 @@ model Story {
   status      String  @default("writing") @db.VarChar(20)
   aiCharacter String? @db.VarChar(50)
   metadata    Json    @default("{}")
-  coverUrl    String? @db.VarChar(500)
+  coverUrl    String? @db.Text
 
   completedAt DateTime?
   createdAt   DateTime @default(now())
@@ -264,7 +264,7 @@ model Illustration {
   sceneText    String?
   style        String      @db.VarChar(50)
   prompt       String?
-  imageUrl     String      @db.VarChar(500)
+  imageUrl     String      @db.Text
   isCover      Boolean     @default(false)
   branchNodeId String?     @db.Uuid
   branchNode   BranchNode? @relation(fields: [branchNodeId], references: [id])
@@ -285,7 +285,7 @@ model AudioTrack {
   type         String  @db.VarChar(20)
   voiceStyle   String? @db.VarChar(50)
   bgmMode      String? @db.VarChar(20)
-  audioUrl     String  @db.VarChar(500)
+  audioUrl     String  @db.Text
   duration     Int?
   moodTimeline Json?
   branchPath   Json?

@@ -1,7 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
-import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 
 // TTS 음성 스타일 → Google Cloud TTS 음성 이름 매핑 (ko-KR)
@@ -21,17 +19,11 @@ const SPEED_MAP: Record<string, number> = {
 @Injectable()
 export class AudioService {
   private readonly logger = new Logger(AudioService.name);
-  private readonly uploadsDir: string;
 
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
-  ) {
-    this.uploadsDir = path.join(process.cwd(), 'uploads', 'audio');
-    if (!fs.existsSync(this.uploadsDir)) {
-      fs.mkdirSync(this.uploadsDir, { recursive: true });
-    }
-  }
+  ) {}
 
   // TTS 생성 (비동기)
   async generateTts(storyId: string, voiceStyle: string, speed: string) {
@@ -92,11 +84,7 @@ export class AudioService {
       }
 
       const data = (await response.json()) as { audioContent: string };
-      const audioBuffer = Buffer.from(data.audioContent, 'base64');
-      const filename = `${storyId}-${Date.now()}.mp3`;
-      const filePath = path.join(this.uploadsDir, filename);
-      fs.writeFileSync(filePath, audioBuffer);
-      audioUrl = `/uploads/audio/${filename}`;
+      audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
     } else {
       // API 키 미설정 시 샘플 URL
       this.logger.warn('GOOGLE_TTS_KEY 미설정 — 샘플 오디오 URL 사용');
