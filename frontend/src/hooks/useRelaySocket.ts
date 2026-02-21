@@ -151,8 +151,9 @@ export function useRelaySocket({
   }, [storyId]);
 
   const startRelay = useCallback(
-    (turnSeconds?: number) => {
-      socketRef.current?.emit('relay:start', { storyId, sessionId, turnSeconds });
+    (turnSeconds?: number, overrideStoryId?: string) => {
+      const sid = overrideStoryId || storyId;
+      socketRef.current?.emit('relay:start', { storyId: sid, sessionId, turnSeconds });
     },
     [storyId, sessionId],
   );

@@ -233,11 +233,12 @@ export default function RelayPage() {
         aiCharacter: 'grandmother',
       });
       const story = res.data;
-      setStoryId(story.id);
+      const newStoryId = story.id;
+      setStoryId(newStoryId);
       setStoryParts(story.parts as any);
       setRelayStarted(true);
-      // 릴레이 타이머 시작
-      setTimeout(() => startRelay(90), 500);
+      // 릴레이 타이머 시작 (storyId를 직접 전달 — React state 클로저 지연 방지)
+      setTimeout(() => startRelay(90, newStoryId), 500);
     } catch (e) {
       console.error(e);
     }
