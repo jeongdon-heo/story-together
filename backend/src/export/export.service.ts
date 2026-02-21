@@ -220,33 +220,28 @@ export class ExportService {
         const cover = story.illustrations?.find((i) => i.isCover);
         const illustrations = story.illustrations?.filter((i) => !i.isCover) || [];
 
-        const partsHtml = story.parts
-          .map((part) => {
-            const isAi = part.authorType === 'ai';
-            return `
-          <div class="part ${isAi ? 'part-ai' : 'part-student'}">
-            <span class="part-label">${isAi ? '🤖 AI' : `✏️ ${authorName}`}</span>
+        // 파트와 삽화를 sceneIndex 기준으로 인터리브
+        let bodyHtml = '';
+        story.parts.forEach((part, partIdx) => {
+          bodyHtml += `
+          <div class="part">
             <p class="part-text">${part.text.replace(/\n/g, '<br>')}</p>
           </div>`;
-          })
-          .join('');
+          if (opts.includeIllustrations) {
+            const illustForPart = illustrations.find((ill) => {
+              const targetIdx = Math.min(ill.sceneIndex, story.parts.length - 1);
+              return targetIdx === partIdx;
+            });
+            if (illustForPart) {
+              bodyHtml += `<div class="illustration"><img src="${illustForPart.imageUrl}" alt="삽화"></div>`;
+            }
+          }
+        });
 
         const coverHtml =
           opts.includeIllustrations && cover
             ? `<div class="cover-img-wrap"><img class="cover-img" src="${cover.imageUrl}" alt="표지"></div>`
             : '';
-
-        // 삽화를 파트 사이에 끼워넣기 (sceneIndex 기반)
-        let bodyHtml = partsHtml;
-        if (opts.includeIllustrations && illustrations.length > 0) {
-          const illustHtml = illustrations
-            .map(
-              (ill) =>
-                `<div class="illustration"><img src="${ill.imageUrl}" alt="삽화 ${ill.sceneIndex}"></div>`,
-            )
-            .join('');
-          bodyHtml += illustHtml;
-        }
 
         const pageBreak = opts.isCollection && idx < stories.length - 1
           ? '<div class="page-break"></div>'
@@ -350,44 +345,21 @@ export class ExportService {
     }
 
     /* 파트 스타일 */
-    .parts-container { display: flex; flex-direction: column; gap: 16px; }
+    .parts-container { display: flex; flex-direction: column; gap: 0; }
 
-    .part { border-radius: 16px; padding: 16px 20px; position: relative; }
-    .part-label {
-      display: block;
-      font-size: 0.72em;
-      font-weight: 700;
-      margin-bottom: 6px;
-      opacity: 0.7;
-      letter-spacing: 0.05em;
-    }
+    .part { padding: 0 0 16px 0; }
     .part-text {
       font-family: 'Nanum Myeongjo', serif;
       font-size: 1.05em;
       line-height: 2;
     }
 
-    .part-ai {
-      background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
-      border-left: 4px solid #6c8ebf;
-    }
-    .part-ai .part-label { color: #4a6fa5; }
-
-    .part-student {
-      background: linear-gradient(135deg, #fff7ed, #fef3c7);
-      border-left: 4px solid #f59e0b;
-    }
-    .part-student .part-label { color: #b45309; }
-
     /* 삽화 */
     .illustration {
-      margin: 24px 0;
-      text-align: center;
+      margin: 16px 0 24px;
     }
     .illustration img {
-      max-width: 100%;
-      max-height: 280px;
-      object-fit: contain;
+      width: 100%;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
