@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -239,12 +240,14 @@ export class StoryService {
       );
     } catch (error: any) {
       this.logger.error(`complete: generateEnding 실패 — ${error.message}`, error.stack);
-      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요.`);
+      // NestJS 예외는 그대로 전달 (HttpException 계열)
+      if (error?.getStatus) throw error;
+      throw new InternalServerErrorException('마무리 생성에 실패했습니다. 다시 시도해주세요.');
     }
 
     if (!endingText || !endingText.trim()) {
       this.logger.error('complete: 결말 텍스트가 비어있음');
-      throw new Error('마무리 생성에 실패했습니다. 다시 시도해주세요.');
+      throw new InternalServerErrorException('마무리 생성에 실패했습니다. 다시 시도해주세요.');
     }
 
     this.logger.log(`complete: 결말 생성 완료 (${endingText.length}자)`);

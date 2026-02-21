@@ -13,7 +13,7 @@ export class AppController {
       data: {
         status: 'ok',
         service: 'story-together-api',
-        version: '2.2.0',
+        version: '2.3.0',
         timestamp: new Date().toISOString(),
       },
     };

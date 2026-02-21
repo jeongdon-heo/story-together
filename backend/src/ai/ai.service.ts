@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import { buildSystemPrompt, GRADE_CONFIG } from './ai-config';
@@ -146,7 +146,8 @@ ${storyText}
       const msg = error?.message || String(error);
       const status = error?.status || error?.response?.status || 'unknown';
       this.logger.error(`이야기 이어쓰기 API 호출 실패: status=${status}, msg=${msg}`, error?.stack);
-      throw new Error(`AI 응답 생성에 실패했습니다: ${msg}`);
+      if (error?.getStatus) throw error;
+      throw new InternalServerErrorException(`AI 응답 생성에 실패했습니다. 다시 시도해주세요.`);
     }
   }
 
@@ -164,7 +165,7 @@ ${storyText}
     const totalChars = result.replace(/[\s\d.,!'"()\-:;]/g, '').length;
     if (totalChars > 0 && koreanChars / totalChars < 0.5) {
       this.logger.error(`비한국어 응답 감지: korean=${koreanChars}/${totalChars}, text=${result.substring(0, 100)}`);
-      throw new Error('AI가 한국어가 아닌 응답을 생성했습니다. 다시 시도해주세요.');
+      throw new InternalServerErrorException('AI가 한국어가 아닌 응답을 생성했습니다. 다시 시도해주세요.');
     }
 
     return result;
@@ -244,7 +245,10 @@ ${storyContext}
       const status = error?.status || error?.response?.status || 'unknown';
       const body = error?.response?.data ? JSON.stringify(error.response.data).substring(0, 500) : 'N/A';
       this.logger.error(`generateEnding 실패: status=${status}, msg=${msg}, body=${body}`, error?.stack);
-      throw new Error(`마무리 생성에 실패했습니다. 다시 시도해주세요. (${msg})`);
+      if (status === 429) {
+        throw new ServiceUnavailableException('AI 서버가 바쁩니다. 잠시 후 다시 시도해주세요.');
+      }
+      throw new InternalServerErrorException(`마무리 생성에 실패했습니다. 다시 시도해주세요.`);
     }
   }
 
@@ -618,7 +622,7 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
         throw error;
       }
     }
-    throw new Error('재시도 횟수 초과');
+    throw new ServiceUnavailableException('AI 서버 요청 재시도 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.');
   }
 
   private async callGeminiText(
@@ -626,7 +630,7 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     messages: StoryMessage[],
   ): Promise<string> {
     if (!this.client) {
-      throw new Error('Gemini client not initialized (no API key)');
+      throw new ServiceUnavailableException('AI 서비스가 설정되지 않았습니다 (API 키 없음)');
     }
 
     return this.withRetry(async () => {
@@ -679,7 +683,7 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
       const text = response.text?.trim() || '';
       if (!text) {
         this.logger.error(`Gemini API 빈 응답: model=${this.model}, contents=${JSON.stringify(contents).substring(0, 200)}`);
-        throw new Error('Gemini API가 빈 응답을 반환했습니다');
+        throw new InternalServerErrorException('AI가 빈 응답을 반환했습니다. 다시 시도해주세요.');
       }
       return text;
     });
@@ -690,7 +694,7 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
     userMessage: string,
   ): Promise<T> {
     if (!this.client) {
-      throw new Error('Gemini client not initialized (no API key)');
+      throw new ServiceUnavailableException('AI 서비스가 설정되지 않았습니다 (API 키 없음)');
     }
 
     return this.withRetry(async () => {
