@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useToastStore } from '@/components/Toast';
 
 export function getBaseURL(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -61,6 +62,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (error.response?.status !== 401) {
+      const msg = error.response?.data?.message || error.message || '요청에 실패했습니다';
+      useToastStore.getState().addToast(msg, 'error');
+    }
 
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
