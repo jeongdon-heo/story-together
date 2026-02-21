@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getBaseURL } from '../../../lib/api';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function BranchEntryPage() {
   const router = useRouter();
+  const { isGuest } = useAuth();
+
+  useEffect(() => {
+    if (isGuest) router.replace('/student');
+  }, [isGuest, router]);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

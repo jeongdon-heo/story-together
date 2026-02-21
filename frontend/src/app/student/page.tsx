@@ -41,7 +41,7 @@ const MODES = [
 ];
 
 export default function StudentHome() {
-  const { user, logout } = useAuth();
+  const { user, logout, isGuest } = useAuth();
   const router = useRouter();
   const [stickerCount, setStickerCount] = useState(0);
   const [newStickerCount, setNewStickerCount] = useState(0);
@@ -80,21 +80,34 @@ export default function StudentHome() {
 
         {/* 이야기 모드 선택 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {MODES.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => router.push(mode.href)}
-              className="relative bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-left hover:shadow-md transition-all active:scale-95 group"
-            >
-              <div
-                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mode.color} flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform`}
+          {MODES.map((mode) => {
+            const disabled = isGuest && mode.id !== 'solo';
+            return (
+              <button
+                key={mode.id}
+                onClick={() => !disabled && router.push(mode.href)}
+                disabled={disabled}
+                className={`relative bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-left transition-all group ${
+                  disabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:shadow-md active:scale-95'
+                }`}
               >
-                {mode.emoji}
-              </div>
-              <h3 className="font-bold text-gray-900 mb-1">{mode.title}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">{mode.desc}</p>
-            </button>
-          ))}
+                <div
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mode.color} flex items-center justify-center text-2xl mb-3 ${
+                    disabled ? '' : 'group-hover:scale-110'
+                  } transition-transform`}
+                >
+                  {mode.emoji}
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">{mode.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{mode.desc}</p>
+                {disabled && (
+                  <p className="text-xs text-orange-500 mt-2">🔒 로그인 후 이용 가능</p>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* 스티커 / 내 이야기 */}

@@ -76,6 +76,27 @@ export class SessionController {
     return { data };
   }
 
+  @Patch(':id')
+  @Roles('teacher')
+  async update(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: { title?: string },
+  ) {
+    const session = await this.prisma.session.findUnique({
+      where: { id },
+      include: { classRoom: true },
+    });
+    if (!session || !session.classRoom || session.classRoom.teacherId !== user.id) {
+      return { data: null, error: 'Not found or unauthorized' };
+    }
+    const data = await this.prisma.session.update({
+      where: { id },
+      data: { ...(dto.title && { title: dto.title }) },
+    });
+    return { data };
+  }
+
   @Post(':id/pause')
   @Roles('teacher')
   async pause(@CurrentUser() user: User, @Param('id') id: string) {

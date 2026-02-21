@@ -66,6 +66,14 @@ export class ClassService {
       include: {
         _count: { select: { members: true } },
         teacher: { select: { id: true, name: true } },
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, loginId: true, grade: true, avatarIcon: true },
+            },
+          },
+          orderBy: { orderIndex: 'asc' },
+        },
       },
     });
 

@@ -25,12 +25,12 @@ export class AnalyticsService {
     const allStories = sessions.flatMap((s) => s.stories);
     const completedStories = allStories.filter((s) => s.status === 'completed');
 
-    const totalWords = allStories.reduce(
-      (sum, story) => sum + (story.metadata as any)?.wordCount || 0,
-      0,
-    );
+    const totalWords = allStories.reduce((sum, story) => {
+      const studentParts = story.parts.filter((p) => p.authorType === 'student');
+      return sum + studentParts.reduce((ps, p) => ps + p.text.length, 0);
+    }, 0);
     const totalTurns = allStories.reduce(
-      (sum, story) => sum + (story.metadata as any)?.totalTurns || 0,
+      (sum, story) => sum + story.parts.filter((p) => p.authorType === 'student').length,
       0,
     );
 
@@ -80,10 +80,10 @@ export class AnalyticsService {
     if (!session) throw new NotFoundException('세션을 찾을 수 없습니다.');
 
     const studentStories = session.stories.filter((s) => s.userId !== null);
-    const totalWords = session.stories.reduce(
-      (sum, s) => sum + ((s.metadata as any)?.wordCount || 0),
-      0,
-    );
+    const totalWords = session.stories.reduce((sum, story) => {
+      const studentParts = story.parts.filter((p) => p.authorType === 'student');
+      return sum + studentParts.reduce((ps, p) => ps + p.text.length, 0);
+    }, 0);
 
     // 학생별 기여도
     const studentStats = studentStories.map((story) => {
@@ -141,10 +141,10 @@ export class AnalyticsService {
     });
 
     const completed = stories.filter((s) => s.status === 'completed');
-    const totalWords = stories.reduce(
-      (sum, s) => sum + ((s.metadata as any)?.wordCount || 0),
-      0,
-    );
+    const totalWords = stories.reduce((sum, story) => {
+      const studentParts = story.parts.filter((p) => p.authorType === 'student');
+      return sum + studentParts.reduce((ps, p) => ps + p.text.length, 0);
+    }, 0);
     const studentParts = stories.flatMap((s) =>
       s.parts.filter((p) => p.authorType === 'student'),
     );
@@ -186,7 +186,7 @@ export class AnalyticsService {
         .map((s) => ({
           id: s.id,
           status: s.status,
-          wordCount: (s.metadata as any)?.wordCount || 0,
+          wordCount: s.parts.filter((p) => p.authorType === 'student').reduce((sum, p) => sum + p.text.length, 0),
           createdAt: s.createdAt,
         })),
     };
@@ -210,7 +210,7 @@ export class AnalyticsService {
         storyId: story.id,
         studentName: story.user?.name || '익명',
         status: story.status,
-        wordCount: (story.metadata as any)?.wordCount || 0,
+        wordCount: story.parts.filter((p) => p.authorType === 'student').reduce((sum, p) => sum + p.text.length, 0),
         turnCount: studentParts.length,
         preview: studentParts[0]?.text.slice(0, 60) || '',
       };
