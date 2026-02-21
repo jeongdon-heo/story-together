@@ -110,45 +110,43 @@ export default function StoryBookPage() {
 
         {/* 이야기 본문 */}
         <div className="p-6 space-y-6">
-          {story.parts.map((part, idx) => {
-            // 이 파트 뒤에 들어갈 삽화 찾기
-            const illustAfter = Object.values(sceneMap).find(
-              (il) => {
-                // sceneIndex를 기반으로 적절한 파트 뒤에 배치
-                const sceneIdx = il.sceneIndex;
-                const targetPartIdx = Math.min(
-                  sceneIdx,
-                  story.parts.length - 1,
-                );
-                return targetPartIdx === idx;
-              },
-            );
+          <div className="rounded-2xl p-6 bg-white border border-amber-100 shadow-sm space-y-4">
+            {story.parts.map((part, idx) => {
+              // 이 파트 뒤에 들어갈 삽화 찾기
+              const illustAfter = Object.values(sceneMap).find(
+                (il) => {
+                  const sceneIdx = il.sceneIndex;
+                  const targetPartIdx = Math.min(
+                    sceneIdx,
+                    story.parts.length - 1,
+                  );
+                  return targetPartIdx === idx;
+                },
+              );
 
-            return (
-              <div key={part.id}>
-                {/* 파트 텍스트 */}
-                <div className="rounded-2xl p-5 bg-white border border-amber-100 shadow-sm">
+              return (
+                <div key={part.id}>
                   <p className="text-gray-800 leading-loose text-base">{part.text}</p>
-                </div>
 
-                {/* 파트 뒤 삽화 */}
-                {illustAfter && (
-                  <div className="mt-4">
-                    <img
-                      src={toBackendURL(illustAfter.imageUrl)}
-                      alt={illustAfter.sceneText || '이야기 장면'}
-                      className="w-full rounded-2xl object-cover aspect-video shadow-md"
-                    />
-                    {illustAfter.sceneText && (
-                      <p className="text-center text-xs text-gray-400 mt-2 italic">
-                        {illustAfter.sceneText}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {/* 파트 뒤 삽화 */}
+                  {illustAfter && (
+                    <div className="mt-4 mb-2">
+                      <img
+                        src={toBackendURL(illustAfter.imageUrl)}
+                        alt={illustAfter.sceneText || '이야기 장면'}
+                        className="w-full rounded-2xl object-cover aspect-video shadow-md"
+                      />
+                      {illustAfter.sceneText && (
+                        <p className="text-center text-xs text-gray-400 mt-2 italic">
+                          {illustAfter.sceneText}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* 완결 표시 */}
           {story.status === 'completed' && (
