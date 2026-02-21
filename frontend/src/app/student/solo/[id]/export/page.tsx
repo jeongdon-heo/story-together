@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { exportApi, type ExportJob, EXPORT_TYPE_LABELS } from '../../../../../lib/export-api';
 import { storyApi } from '../../../../../lib/story-api';
+import { toBackendURL } from '../../../../../lib/api';
 import type { Story } from '../../../../../types/story';
 
-type ExportType = 'pdf' | 'audio' | 'video';
+type ExportType = 'pdf' | 'audio';
 
 function JobStatusCard({
   job,
@@ -88,8 +89,7 @@ export default function StoryExportPage() {
   const [voiceStyle, setVoiceStyle] = useState('narrator');
   const [audioJob, setAudioJob] = useState<ExportJob | null>(null);
 
-  // 영상 (placeholder)
-  const [videoJob, setVideoJob] = useState<ExportJob | null>(null);
+
 
   // 폴링
   const pollJob = useCallback(
@@ -142,29 +142,16 @@ export default function StoryExportPage() {
     } catch {}
   };
 
-  const handleExportVideo = async () => {
-    setVideoJob(null);
-    try {
-      const res = await exportApi.exportVideo({ storyId });
-      if (res.data) {
-        setVideoJob(res.data);
-        setTimeout(() => {
-          exportApi.getJobStatus(res.data!.jobId).then((r) => {
-            if (r.data) setVideoJob(r.data);
-          }).catch(() => {});
-        }, 1000);
-      }
-    } catch {}
-  };
-
   const openFile = (url: string) => {
-    window.open(url, '_blank');
+    window.open(toBackendURL(url), '_blank');
   };
 
   const downloadFile = (url: string, name: string) => {
+    const fullUrl = toBackendURL(url);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = fullUrl;
     a.download = name;
+    a.target = '_blank';
     a.click();
   };
 
@@ -203,8 +190,8 @@ export default function StoryExportPage() {
         </div>
 
         {/* 내보내기 유형 선택 */}
-        <div className="grid grid-cols-3 gap-3">
-          {(['pdf', 'audio', 'video'] as ExportType[]).map((type) => {
+        <div className="grid grid-cols-2 gap-3">
+          {(['pdf', 'audio'] as ExportType[]).map((type) => {
             const info = EXPORT_TYPE_LABELS[type];
             const isActive = activeType === type;
             return (
@@ -311,30 +298,6 @@ export default function StoryExportPage() {
               className="w-full bg-violet-500 text-white rounded-xl py-3 font-bold hover:bg-violet-600 transition-colors disabled:opacity-50"
             >
               {audioJob?.status === 'processing' ? '확인 중...' : '🎧 오디오 파일 내보내기'}
-            </button>
-          </div>
-        )}
-
-        {/* 영상 (준비 중) */}
-        {activeType === 'video' && (
-          <div className="bg-white rounded-2xl border border-violet-100 p-5 space-y-4">
-            <h3 className="font-bold text-gray-900">🎬 영상 만들기</h3>
-            <div className="bg-amber-50 rounded-2xl p-5 text-center">
-              <p className="text-3xl mb-3">🚧</p>
-              <p className="font-semibold text-amber-700">준비 중이에요!</p>
-              <p className="text-xs text-amber-500 mt-2">
-                삽화와 음성이 합쳐진 영상 내보내기는<br />곧 지원될 예정이에요.
-              </p>
-            </div>
-            {videoJob && (
-              <JobStatusCard job={videoJob} />
-            )}
-            <button
-              onClick={handleExportVideo}
-              disabled
-              className="w-full bg-gray-200 text-gray-400 rounded-xl py-3 font-bold cursor-not-allowed"
-            >
-              🎬 영상 만들기 (준비 중)
             </button>
           </div>
         )}

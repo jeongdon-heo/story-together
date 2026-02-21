@@ -30,11 +30,6 @@ export const EXPORT_TYPE_LABELS: Record<string, { label: string; emoji: string; 
     emoji: '🎧',
     desc: 'TTS로 읽어주는 오디오 파일을 저장해요',
   },
-  video: {
-    label: '영상 만들기',
-    emoji: '🎬',
-    desc: '삽화와 음성이 합쳐진 영상을 만들어요 (준비 중)',
-  },
   collection: {
     label: '문집 만들기',
     emoji: '📚',
