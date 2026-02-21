@@ -90,17 +90,20 @@ export default function BranchTreePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
       <div className="max-w-2xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-gray-500 hover:text-gray-700 mb-2"
-          >
-            ← 뒤로
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">🌿 이야기 트리</h1>
-          <p className="text-sm text-gray-500">갈림길마다 어떤 선택을 했는지 확인하고, 다른 선택지의 이야기도 탐색해 보세요!</p>
-        </div>
+         {/* 헤더 */}
+         <div className="mb-6 flex items-start justify-between">
+           <div>
+             <button
+               onClick={() => router.back()}
+               className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+             >
+               ← 뒤로
+             </button>
+             <h1 className="text-2xl font-bold text-gray-900">🌿 이야기 트리</h1>
+             <p className="text-sm text-gray-500">갈림길마다 어떤 선택을 했는지 확인하고, 다른 선택지의 이야기도 탐색해 보세요!</p>
+           </div>
+           <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+         </div>
 
         {nodes.length === 0 ? (
           <div className="text-center py-12">

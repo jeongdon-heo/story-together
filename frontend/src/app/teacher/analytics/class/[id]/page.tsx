@@ -51,15 +51,18 @@ export default function ClassAnalyticsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
       <div className="max-w-2xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-5">
-          <Link href="/teacher/analytics" className="text-sm text-gray-500 hover:text-gray-700">
-            ← 통계 홈
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">
-            📊 {analytics.className}
-          </h1>
-        </div>
+         {/* 헤더 */}
+         <div className="mb-5 flex items-start justify-between">
+           <div>
+             <Link href="/teacher/analytics" className="text-sm text-gray-500 hover:text-gray-700">
+               ← 통계 홈
+             </Link>
+             <h1 className="text-2xl font-bold text-gray-900 mt-1">
+               📊 {analytics.className}
+             </h1>
+           </div>
+           <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+         </div>
 
         {/* 핵심 지표 카드 */}
         <div className="grid grid-cols-2 gap-3 mb-4">

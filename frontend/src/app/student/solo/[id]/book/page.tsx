@@ -75,12 +75,15 @@ export default function StoryBookPage() {
           ← 뒤로
         </button>
         <span className="text-sm font-semibold text-amber-700">📚 동화책</span>
-        <button
-          onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
-          className="text-sm text-violet-500 hover:text-violet-700"
-        >
-          삽화 편집
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
+            className="text-sm text-violet-500 hover:text-violet-700"
+          >
+            삽화 편집
+          </button>
+          <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+        </div>
       </div>
 
       <div className="max-w-lg mx-auto pb-16">

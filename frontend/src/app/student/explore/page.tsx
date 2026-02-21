@@ -121,6 +121,7 @@ export default function ExplorePage() {
           >
             🏆 명예의 전당
           </button>
+          <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
         </div>
 
         {/* 필터 바 */}

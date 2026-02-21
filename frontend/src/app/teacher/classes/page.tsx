@@ -75,26 +75,29 @@ export default function ClassesPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/teacher"
-              className="text-sm text-gray-400 hover:text-gray-700"
-            >
-              &larr; 대시보드
-            </Link>
-            <h1 className="text-2xl font-bold">반 관리</h1>
-          </div>
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            {showCreate ? '취소' : '새 반 만들기'}
-          </button>
-        </div>
+   return (
+     <div className="min-h-screen bg-gray-50 p-6">
+       <div className="max-w-4xl mx-auto">
+         <div className="flex items-center justify-between mb-6">
+           <div className="flex items-center gap-3">
+             <Link
+               href="/teacher"
+               className="text-sm text-gray-400 hover:text-gray-700"
+             >
+               &larr; 대시보드
+             </Link>
+             <h1 className="text-2xl font-bold">반 관리</h1>
+           </div>
+           <div className="flex items-center gap-2">
+             <button
+               onClick={() => setShowCreate(!showCreate)}
+               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+             >
+               {showCreate ? '취소' : '새 반 만들기'}
+             </button>
+             <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+           </div>
+         </div>
 
         {/* 반 생성 폼 */}
         {showCreate && (

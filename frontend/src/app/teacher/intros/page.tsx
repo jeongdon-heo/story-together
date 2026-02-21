@@ -123,33 +123,34 @@ export default function IntrosPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <a
-              href="/teacher"
-              className="text-sm text-gray-500 hover:text-gray-700 mb-1 block"
-            >
-              &larr; 대시보드
-            </a>
-            <h1 className="text-2xl font-bold text-gray-900">도입부 관리</h1>
-            <p className="text-sm text-gray-500">같은 시작 모드에 사용할 도입부를 만들고 저장하세요</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setShowGenForm(!showGenForm); setShowManualForm(false); setPreviewText(''); }}
-              className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-semibold hover:bg-indigo-600"
-            >
-              🤖 AI로 생성
-            </button>
-            <button
-              onClick={() => { setShowManualForm(!showManualForm); setShowGenForm(false); setPreviewText(''); }}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
-            >
-              ✏️ 직접 입력
-            </button>
-          </div>
-        </div>
+         {/* 헤더 */}
+         <div className="flex items-center justify-between mb-6">
+           <div>
+             <a
+               href="/teacher"
+               className="text-sm text-gray-500 hover:text-gray-700 mb-1 block"
+             >
+               &larr; 대시보드
+             </a>
+             <h1 className="text-2xl font-bold text-gray-900">도입부 관리</h1>
+             <p className="text-sm text-gray-500">같은 시작 모드에 사용할 도입부를 만들고 저장하세요</p>
+           </div>
+           <div className="flex gap-2">
+             <button
+               onClick={() => { setShowGenForm(!showGenForm); setShowManualForm(false); setPreviewText(''); }}
+               className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm font-semibold hover:bg-indigo-600"
+             >
+               🤖 AI로 생성
+             </button>
+             <button
+               onClick={() => { setShowManualForm(!showManualForm); setShowGenForm(false); setPreviewText(''); }}
+               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
+             >
+               ✏️ 직접 입력
+             </button>
+             <a href="/teacher" className="text-gray-400 hover:text-gray-700 flex items-center" title="홈으로">🏠</a>
+           </div>
+         </div>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">

@@ -41,20 +41,23 @@ export default function StudentAnalyticsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-5">
-          <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700">
-            ← 뒤로
-          </button>
-          <div className="flex items-center gap-3 mt-2">
-            <div className="w-12 h-12 bg-indigo-200 rounded-2xl flex items-center justify-center text-2xl">
-              👤
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{analytics.name}</h1>
-              <p className="text-xs text-gray-500">{analytics.grade}학년</p>
-            </div>
-          </div>
-        </div>
+         <div className="mb-5 flex items-start justify-between">
+           <div>
+             <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700">
+               ← 뒤로
+             </button>
+             <div className="flex items-center gap-3 mt-2">
+               <div className="w-12 h-12 bg-indigo-200 rounded-2xl flex items-center justify-center text-2xl">
+                 👤
+               </div>
+               <div>
+                 <h1 className="text-xl font-bold text-gray-900">{analytics.name}</h1>
+                 <p className="text-xs text-gray-500">{analytics.grade}학년</p>
+               </div>
+             </div>
+           </div>
+           <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+         </div>
 
         {/* 핵심 지표 */}
         <div className="grid grid-cols-2 gap-3 mb-4">

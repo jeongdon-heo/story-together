@@ -384,15 +384,18 @@ export default function RelayPage() {
                     )}
                   </span>
                 </div>
-                <span
-                  className={`text-sm font-bold tabular-nums ${
-                    secondsLeft <= 10
-                      ? 'text-red-500 animate-pulse'
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {secondsLeft}초
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-sm font-bold tabular-nums ${
+                      secondsLeft <= 10
+                        ? 'text-red-500 animate-pulse'
+                        : 'text-gray-600'
+                    }`}
+                  >
+                    {secondsLeft}초
+                  </span>
+                  <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+                </div>
               </div>
             )}
             <TimerBar secondsLeft={secondsLeft} totalSeconds={totalSeconds} />

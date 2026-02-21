@@ -136,6 +136,7 @@ export default function ListenPage() {
           <h1 className="font-bold text-gray-900">🎧 이야기 듣기</h1>
           <p className="text-xs text-gray-400">AI가 이야기를 읽어드려요!</p>
         </div>
+        <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">

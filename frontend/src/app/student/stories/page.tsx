@@ -224,6 +224,7 @@ export default function StoriesPage() {
               내가 쓴 모든 이야기를 모아볼 수 있어요
             </p>
           </div>
+          <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
         </div>
 
         {/* 필터 바 */}

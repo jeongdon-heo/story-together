@@ -144,16 +144,19 @@ export default function SoloStoryPage() {
               자
             </p>
           </div>
-          {!isCompleted && (
-            <button
-              onClick={handleComplete}
-              disabled={completing || story.parts.length < 3}
-              className="text-sm px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-            >
-              {completing ? '마무리 중...' : '마무리'}
-            </button>
-          )}
-          {isCompleted && <div className="w-16" />}
+          <div className="flex items-center gap-2">
+            {!isCompleted && (
+              <button
+                onClick={handleComplete}
+                disabled={completing || story.parts.length < 3}
+                className="text-sm px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {completing ? '마무리 중...' : '마무리'}
+              </button>
+            )}
+            {isCompleted && <div className="w-16" />}
+            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+          </div>
         </div>
       </header>
 

@@ -125,6 +125,7 @@ export default function ExploreDetailPage() {
           <span>{liked ? '❤️' : '🤍'}</span>
           <span>{likeCount}</span>
         </button>
+        <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-5">

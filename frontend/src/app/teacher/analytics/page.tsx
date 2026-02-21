@@ -20,13 +20,16 @@ export default function AnalyticsIndexPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <Link href="/teacher" className="text-sm text-gray-500 hover:text-gray-700">
-            ← 대시보드
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">📊 학습 통계</h1>
-          <p className="text-sm text-gray-500 mt-1">반을 선택해 통계를 확인하세요</p>
-        </div>
+         <div className="mb-6 flex items-start justify-between">
+           <div>
+             <Link href="/teacher" className="text-sm text-gray-500 hover:text-gray-700">
+               ← 대시보드
+             </Link>
+             <h1 className="text-2xl font-bold text-gray-900 mt-1">📊 학습 통계</h1>
+             <p className="text-sm text-gray-500 mt-1">반을 선택해 통계를 확인하세요</p>
+           </div>
+           <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+         </div>
 
         {loading ? (
           <div className="flex justify-center py-10">

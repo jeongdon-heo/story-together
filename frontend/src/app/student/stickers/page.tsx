@@ -185,6 +185,7 @@ export default function StudentStickersPage() {
             새 {newCount}개
           </span>
         )}
+        <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">

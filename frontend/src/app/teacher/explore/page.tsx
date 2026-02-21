@@ -60,6 +60,7 @@ export default function TeacherExplorePage() {
             {pending.length}건 대기
           </span>
         )}
+        <a href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</a>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-4">

@@ -257,14 +257,17 @@ export default function SameStartStoryPage() {
               )}
             </p>
           </div>
-          {isCompleted && (
-            <button
-              onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
-              className="text-sm bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600"
-            >
-              갤러리 보기 →
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {isCompleted && (
+              <button
+                onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
+                className="text-sm bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600"
+              >
+                갤러리 보기 →
+              </button>
+            )}
+            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+          </div>
         </div>
       </header>
 

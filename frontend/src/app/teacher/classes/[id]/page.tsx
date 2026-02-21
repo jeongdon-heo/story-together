@@ -57,32 +57,35 @@ export default function ClassDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
-          <Link
-            href="/teacher/classes"
-            className="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-block"
-          >
-            &larr; 반 목록으로
-          </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{classRoom.name}</h1>
-              <p className="text-gray-500">
-                {classRoom.grade ? `${classRoom.grade}학년` : ''} ·{' '}
-                {members.length}명
-              </p>
-            </div>
-            {classRoom.joinCode && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-3 text-center">
-                <p className="text-xs text-gray-400 mb-1">참여 코드</p>
-                <p className="font-mono font-bold text-2xl tracking-widest">
-                  {classRoom.joinCode}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+         {/* 헤더 */}
+         <div className="mb-6">
+           <Link
+             href="/teacher/classes"
+             className="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-block"
+           >
+             &larr; 반 목록으로
+           </Link>
+           <div className="flex items-center justify-between">
+             <div>
+               <h1 className="text-2xl font-bold">{classRoom.name}</h1>
+               <p className="text-gray-500">
+                 {classRoom.grade ? `${classRoom.grade}학년` : ''} ·{' '}
+                 {members.length}명
+               </p>
+             </div>
+             <div className="flex items-center gap-3">
+               {classRoom.joinCode && (
+                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-5 py-3 text-center">
+                   <p className="text-xs text-gray-400 mb-1">참여 코드</p>
+                   <p className="font-mono font-bold text-2xl tracking-widest">
+                     {classRoom.joinCode}
+                   </p>
+                 </div>
+               )}
+               <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+             </div>
+           </div>
+         </div>
 
         {/* 멤버 목록 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">

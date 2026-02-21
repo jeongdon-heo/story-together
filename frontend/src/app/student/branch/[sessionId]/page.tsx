@@ -336,6 +336,7 @@ export default function BranchPage() {
             >
               트리 보기
             </button>
+            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
           </div>
         </div>
       </header>

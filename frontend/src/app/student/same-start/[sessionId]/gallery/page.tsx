@@ -179,21 +179,24 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4">
       <div className="max-w-3xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="text-sm text-gray-500 hover:text-gray-700 mb-2"
-          >
-            ← 뒤로
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">
-            이야기 갤러리
-          </h1>
-          <p className="text-sm text-gray-500">
-            {session?.title || '같은 시작, 다른 결말'} · {stories.length}편
-          </p>
-        </div>
+         {/* 헤더 */}
+         <div className="mb-6 flex items-start justify-between">
+           <div>
+             <button
+               onClick={() => router.back()}
+               className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+             >
+               ← 뒤로
+             </button>
+             <h1 className="text-2xl font-bold text-gray-900">
+               이야기 갤러리
+             </h1>
+             <p className="text-sm text-gray-500">
+               {session?.title || '같은 시작, 다른 결말'} · {stories.length}편
+             </p>
+           </div>
+           <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+         </div>
 
         {/* AI 비교 피드백 */}
         {comparison ? (

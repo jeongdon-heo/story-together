@@ -184,34 +184,37 @@ export default function SessionDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
       <div className="max-w-3xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-5">
-          <Link href="/teacher/sessions" className="text-sm text-gray-500 hover:text-gray-700">
-            ← 세션 목록
-          </Link>
-          <div className="flex items-start justify-between mt-1">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                {MODE_EMOJI[session.mode]} {session.title || `${MODE_LABEL[session.mode]} 세션`}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  session.status === 'active' ? 'bg-green-100 text-green-700'
-                  : session.status === 'paused' ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {session.status === 'active' ? '● 진행 중'
-                   : session.status === 'paused' ? '⏸ 일시정지'
-                   : '✓ 완료'}
-                </span>
-                {session.classRoom && (
-                  <span className="text-xs text-gray-400">{session.classRoom.name}</span>
-                )}
-              </div>
-            </div>
+         {/* 헤더 */}
+         <div className="mb-5">
+           <div className="flex items-center justify-between">
+             <Link href="/teacher/sessions" className="text-sm text-gray-500 hover:text-gray-700">
+               ← 세션 목록
+             </Link>
+             <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
+           </div>
+           <div className="flex items-start justify-between mt-1">
+             <div>
+               <h1 className="text-xl font-bold text-gray-900">
+                 {MODE_EMOJI[session.mode]} {session.title || `${MODE_LABEL[session.mode]} 세션`}
+               </h1>
+               <div className="flex items-center gap-2 mt-1">
+                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                   session.status === 'active' ? 'bg-green-100 text-green-700'
+                   : session.status === 'paused' ? 'bg-yellow-100 text-yellow-700'
+                   : 'bg-gray-100 text-gray-500'
+                 }`}>
+                   {session.status === 'active' ? '● 진행 중'
+                    : session.status === 'paused' ? '⏸ 일시정지'
+                    : '✓ 완료'}
+                 </span>
+                 {session.classRoom && (
+                   <span className="text-xs text-gray-400">{session.classRoom.name}</span>
+                 )}
+               </div>
+             </div>
 
-            {/* 세션 제어 버튼 */}
-            <div className="flex gap-2 flex-wrap justify-end">
+             {/* 세션 제어 버튼 */}
+             <div className="flex gap-2 flex-wrap justify-end">
               {session.status === 'active' && (
                 <button
                   onClick={() => handleStatusChange('pause')}

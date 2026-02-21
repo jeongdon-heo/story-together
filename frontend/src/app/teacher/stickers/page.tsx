@@ -188,6 +188,7 @@ export default function TeacherStickersPage() {
       <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3 flex items-center gap-3 border-b border-teal-100">
         <a href="/teacher" className="text-gray-400 hover:text-gray-700 text-xl">←</a>
         <h1 className="font-bold text-gray-900 flex-1">칭찬 스티커 관리</h1>
+        <a href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</a>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
