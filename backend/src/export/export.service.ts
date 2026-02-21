@@ -17,11 +17,15 @@ interface ExportJob {
 export class ExportService {
   private readonly logger = new Logger(ExportService.name);
   private readonly jobs = new Map<string, ExportJob>();
+  private static readonly JOB_TTL_MS = 30 * 60 * 1000; // 30분
+  private static readonly MAX_JOBS = 200;
 
   constructor(private prisma: PrismaService) {}
 
   // ─── 공통: 잡 생성 ───────────────────────────────────────────
   private createJob(type: ExportJob['type']): ExportJob {
+    this.evictExpiredJobs();
+
     const jobId = randomUUID();
     const job: ExportJob = {
       jobId,
@@ -32,6 +36,28 @@ export class ExportService {
     };
     this.jobs.set(jobId, job);
     return job;
+  }
+
+  // ─── 만료된 잡 정리 (30분 초과 or 최대 개수 초과) ──────────────
+  private evictExpiredJobs(): void {
+    const now = Date.now();
+
+    // TTL 만료 잡 삭제
+    for (const [id, job] of this.jobs) {
+      if (now - job.createdAt.getTime() > ExportService.JOB_TTL_MS) {
+        this.jobs.delete(id);
+      }
+    }
+
+    // 최대 개수 초과 시 오래된 순 삭제
+    if (this.jobs.size >= ExportService.MAX_JOBS) {
+      const sorted = [...this.jobs.entries()]
+        .sort((a, b) => a[1].createdAt.getTime() - b[1].createdAt.getTime());
+      const toDelete = sorted.slice(0, this.jobs.size - ExportService.MAX_JOBS + 1);
+      for (const [id] of toDelete) {
+        this.jobs.delete(id);
+      }
+    }
   }
 
   // ─── PDF 내보내기 (단일 이야기) ───────────────────────────────
@@ -195,6 +221,16 @@ export class ExportService {
     };
   }
 
+  // ─── HTML 이스케이프 (XSS 방어) ────────────────────────────────
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   // ─── HTML 빌더 ────────────────────────────────────────────────
   private buildStoryHtml(
     stories: Array<{
@@ -208,10 +244,11 @@ export class ExportService {
     opts: { title: string; isCollection: boolean; includeIllustrations: boolean },
   ): string {
     const now = new Date().toLocaleDateString('ko-KR');
+    const safeTitle = this.escapeHtml(opts.title);
 
     const storiesHtml = stories
       .map((story, idx) => {
-        const authorName = story.user?.name || '작성자';
+        const authorName = this.escapeHtml(story.user?.name || '작성자');
         const cover = story.illustrations?.find((i) => i.isCover);
         const illustrations = story.illustrations?.filter((i) => !i.isCover) || [];
 
@@ -220,7 +257,7 @@ export class ExportService {
         story.parts.forEach((part, partIdx) => {
           bodyHtml += `
           <div class="part">
-            <p class="part-text">${part.text.replace(/\n/g, '<br>')}</p>
+            <p class="part-text">${this.escapeHtml(part.text).replace(/\n/g, '<br>')}</p>
           </div>`;
           if (opts.includeIllustrations) {
             const illustForPart = illustrations.find((ill) => {
@@ -259,7 +296,7 @@ export class ExportService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${opts.title}</title>
+  <title>${safeTitle}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -404,7 +441,7 @@ export class ExportService {
 <body>
 
 <div class="print-bar no-print">
-  <h2>📚 ${opts.title}</h2>
+  <h2>📚 ${safeTitle}</h2>
   <span class="print-hint">대화상자에서 "PDF로 저장"을 선택하세요</span>
   <button class="btn-print" onclick="window.print()">🖨️ PDF로 저장</button>
 </div>
@@ -412,7 +449,7 @@ export class ExportService {
 <!-- 문집 표지 -->
 <div class="book-cover" style="margin-top: ${opts.isCollection ? '0' : '52px'}">
   <div style="font-size:4em;margin-bottom:24px">📖</div>
-  <h1>${opts.title}</h1>
+  <h1>${safeTitle}</h1>
   ${opts.isCollection ? `<p class="subtitle">이야기 ${stories.length}편 수록</p>` : ''}
   <p class="date">제작일: ${now}</p>
 </div>

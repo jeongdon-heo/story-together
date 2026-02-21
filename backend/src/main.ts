@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import helmet from 'helmet';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -12,6 +13,12 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // 보안 헤더 (XSS, clickjacking, MIME sniffing 등 방어)
+  app.use(helmet({
+    contentSecurityPolicy: false, // Next.js 프론트엔드와 호환을 위해 비활성화
+    crossOriginEmbedderPolicy: false,
+  }));
 
   // TTS 오디오 파일 저장 디렉토리 생성 + 정적 서빙
   const uploadsDir = path.join(process.cwd(), 'uploads');
