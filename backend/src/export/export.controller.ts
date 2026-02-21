@@ -5,13 +5,16 @@ import {
   Body,
   Param,
   Query,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { IsString, IsBoolean, IsOptional, IsArray, IsUUID } from 'class-validator';
 import { ExportService } from './export.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 class ExportPdfDto {
   @IsUUID()
@@ -102,6 +105,15 @@ export class ExportController {
   async exportVideo(@Body() dto: ExportVideoDto) {
     const data = await this.exportService.exportVideo(dto.storyId, dto);
     return { data };
+  }
+
+  // HTML 콘텐츠 반환 (PDF 인쇄용)
+  @Public()
+  @Get(':jobId/html')
+  getHtml(@Param('jobId') jobId: string, @Res() res: Response) {
+    const html = this.exportService.getHtmlContent(jobId);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
   }
 
   // 잡 상태 조회

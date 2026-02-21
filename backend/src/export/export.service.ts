@@ -1,6 +1,4 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -10,6 +8,7 @@ interface ExportJob {
   status: 'processing' | 'completed' | 'failed';
   progress: number;
   fileUrl?: string;
+  htmlContent?: string;
   error?: string;
   createdAt: Date;
 }
@@ -17,15 +16,9 @@ interface ExportJob {
 @Injectable()
 export class ExportService {
   private readonly logger = new Logger(ExportService.name);
-  private readonly exportsDir: string;
   private readonly jobs = new Map<string, ExportJob>();
 
-  constructor(private prisma: PrismaService) {
-    this.exportsDir = path.join(process.cwd(), 'uploads', 'exports');
-    if (!fs.existsSync(this.exportsDir)) {
-      fs.mkdirSync(this.exportsDir, { recursive: true });
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   // ─── 공통: 잡 생성 ───────────────────────────────────────────
   private createJob(type: ExportJob['type']): ExportJob {
@@ -84,13 +77,10 @@ export class ExportService {
       includeIllustrations: options.includeIllustrations ?? true,
     });
 
-    const filename = `story-${job.jobId}.html`;
-    const filePath = path.join(this.exportsDir, filename);
-    fs.writeFileSync(filePath, html, 'utf-8');
-
     job.progress = 100;
     job.status = 'completed';
-    job.fileUrl = `/uploads/exports/${filename}`;
+    job.htmlContent = html;
+    job.fileUrl = `/export/${job.jobId}/html`;
   }
 
   // ─── PDF 문집 내보내기 (여러 이야기) ─────────────────────────
@@ -127,13 +117,10 @@ export class ExportService {
       includeIllustrations: true,
     });
 
-    const filename = `collection-${job.jobId}.html`;
-    const filePath = path.join(this.exportsDir, filename);
-    fs.writeFileSync(filePath, html, 'utf-8');
-
     job.progress = 100;
     job.status = 'completed';
-    job.fileUrl = `/uploads/exports/${filename}`;
+    job.htmlContent = html;
+    job.fileUrl = `/export/${job.jobId}/html`;
   }
 
   // ─── 오디오 내보내기 (AudioTrack 파일 URL 반환) ──────────────
@@ -184,6 +171,14 @@ export class ExportService {
       job.progress = 0;
     }, 500);
     return { jobId: job.jobId, status: 'processing' };
+  }
+
+  // ─── HTML 콘텐츠 반환 ──────────────────────────────────────────
+  getHtmlContent(jobId: string): string {
+    const job = this.jobs.get(jobId);
+    if (!job) throw new NotFoundException('내보내기 작업을 찾을 수 없습니다.');
+    if (!job.htmlContent) throw new NotFoundException('HTML 콘텐츠가 없습니다.');
+    return job.htmlContent;
   }
 
   // ─── 잡 상태 조회 ────────────────────────────────────────────
