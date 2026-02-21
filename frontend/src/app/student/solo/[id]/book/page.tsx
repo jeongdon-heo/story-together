@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toBackendURL } from '../../../../../lib/api';
 import { storyApi } from '../../../../../lib/story-api';
+import { exportApi } from '../../../../../lib/export-api';
 import { getStoryIllustrations, STYLE_LABELS, type IllustrationItem } from '../../../../../lib/illustration-api';
 import type { Story, StoryPart } from '../../../../../types/story';
 
@@ -15,6 +16,8 @@ export default function StoryBookPage() {
   const [story, setStory] = useState<Story | null>(null);
   const [illustrations, setIllustrations] = useState<IllustrationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const [pdfDone, setPdfDone] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -161,6 +164,54 @@ export default function StoryBookPage() {
               </div>
             </div>
           )}
+
+          {/* PDF 내보내기 */}
+          <button
+            onClick={async () => {
+              setPdfExporting(true);
+              setPdfDone(false);
+              try {
+                const res = await exportApi.exportPdf({
+                  storyId,
+                  includeIllustrations: illustrations.length > 0,
+                });
+                if (res.data) {
+                  const poll = setInterval(async () => {
+                    try {
+                      const status = await exportApi.getJobStatus(res.data!.jobId);
+                      if (status.data?.status === 'completed' && status.data.fileUrl) {
+                        clearInterval(poll);
+                        setPdfExporting(false);
+                        setPdfDone(true);
+                        window.open(toBackendURL(status.data.fileUrl), '_blank');
+                      } else if (status.data?.status === 'failed') {
+                        clearInterval(poll);
+                        setPdfExporting(false);
+                      }
+                    } catch {
+                      clearInterval(poll);
+                      setPdfExporting(false);
+                    }
+                  }, 1500);
+                }
+              } catch {
+                setPdfExporting(false);
+              }
+            }}
+            disabled={pdfExporting}
+            className="w-full bg-amber-500 text-white rounded-2xl py-3.5 font-bold text-base hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {pdfExporting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                PDF 만드는 중...
+              </>
+            ) : pdfDone ? (
+              '✅ PDF 완료! 다시 내보내기'
+            ) : (
+              '📄 PDF로 내보내기'
+            )}
+          </button>
 
           {/* 삽화가 없을 때 안내 */}
           {illustrations.length === 0 && (
