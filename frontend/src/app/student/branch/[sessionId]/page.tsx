@@ -213,10 +213,11 @@ export default function BranchPage() {
     try {
       const res = await sameStartApi.createStory({ sessionId, aiCharacter: 'grandmother' });
       const story = res.data;
-      setStoryId(story.id);
+      const newStoryId = story.id;
+      setStoryId(newStoryId);
       setStoryParts(story.parts as any);
       setBranchStarted(true);
-      setTimeout(() => startBranch(), 500);
+      setTimeout(() => startBranch(newStoryId), 500);
     } catch {}
   };
 

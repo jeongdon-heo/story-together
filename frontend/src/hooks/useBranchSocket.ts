@@ -144,8 +144,9 @@ export function useBranchSocket({
     socketRef.current?.emit('branch:finish_story', { storyId });
   }, [storyId]);
 
-  const startBranch = useCallback(() => {
-    socketRef.current?.emit('branch:start', { storyId, sessionId });
+  const startBranch = useCallback((overrideStoryId?: string) => {
+    const sid = overrideStoryId || storyId;
+    socketRef.current?.emit('branch:start', { storyId: sid, sessionId });
   }, [storyId, sessionId]);
 
   return { castVote, submitPart, requestHint, finishStory, startBranch };
