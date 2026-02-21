@@ -127,16 +127,7 @@ export default function StoryBookPage() {
             return (
               <div key={part.id}>
                 {/* 파트 텍스트 */}
-                <div
-                  className={`rounded-2xl p-5 ${
-                    part.authorType === 'ai'
-                      ? 'bg-white border border-amber-100 shadow-sm'
-                      : 'bg-amber-50 border border-amber-200'
-                  }`}
-                >
-                  {part.authorType === 'ai' && (
-                    <p className="text-xs text-amber-600 font-semibold mb-2">✨ 이야기 할머니</p>
-                  )}
+                <div className="rounded-2xl p-5 bg-white border border-amber-100 shadow-sm">
                   <p className="text-gray-800 leading-loose text-base">{part.text}</p>
                 </div>
 
