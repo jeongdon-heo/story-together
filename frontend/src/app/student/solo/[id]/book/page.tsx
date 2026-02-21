@@ -86,8 +86,16 @@ export default function StoryBookPage() {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto pb-16">
-        {/* 표지 */}
+       <div className="max-w-lg mx-auto pb-16">
+         {/* 안내 카드 */}
+         <div className="px-6 pt-6 pb-0">
+           <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-6">
+             <h3 className="text-sm font-bold text-gray-900 mb-1">📖 내 동화책</h3>
+             <p className="text-xs text-gray-500 leading-relaxed">내가 만든 동화책을 감상해요! 삽화와 함께 완성된 이야기를 넘겨볼 수 있어요. PDF로 저장하면 진짜 책처럼 인쇄할 수도 있어요.</p>
+           </div>
+         </div>
+
+         {/* 표지 */}
         {cover ? (
           <div className="relative">
             <img

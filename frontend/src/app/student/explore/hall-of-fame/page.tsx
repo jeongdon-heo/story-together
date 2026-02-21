@@ -39,6 +39,12 @@ export default function HallOfFamePage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🏆 명예의 전당</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">좋아요를 가장 많이 받은 인기 이야기 TOP 10이에요! 여기에 올라오면 정말 대단한 거예요!</p>
+        </div>
+
         {/* 히어로 배너 */}
         <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-6 text-center text-white mb-6 shadow-lg">
           <p className="text-4xl mb-2">🏆</p>

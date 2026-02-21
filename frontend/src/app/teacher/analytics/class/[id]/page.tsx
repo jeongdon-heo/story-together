@@ -50,9 +50,15 @@ export default function ClassAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-         {/* 헤더 */}
-         <div className="mb-5 flex items-start justify-between">
+       <div className="max-w-2xl mx-auto">
+          {/* 안내 카드 */}
+          <div className="bg-white rounded-2xl border border-green-100 p-4 mb-5">
+            <h3 className="text-sm font-bold text-gray-900 mb-1">📊 반 통계 상세</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">이 반의 전체 활동 통계를 확인할 수 있어요. 학생별 이야기 수, 글자 수 비교, 최근 활동 내역을 한눈에 볼 수 있습니다.</p>
+          </div>
+
+          {/* 헤더 */}
+          <div className="mb-5 flex items-start justify-between">
            <div>
              <Link href="/teacher/analytics" className="text-sm text-gray-500 hover:text-gray-700">
                ← 통계 홈

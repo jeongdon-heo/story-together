@@ -139,8 +139,14 @@ export default function ListenPage() {
         <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
-        {/* Story summary */}
+       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🎧 이야기 듣기</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">내가 쓴 이야기를 소리 내어 읽어 줘요! 재생 버튼을 누르면 AI가 이야기를 낭독해 줍니다.</p>
+         </div>
+
+         {/* Story summary */}
         {story && (
           <div className="bg-white rounded-2xl border border-violet-100 p-5 flex items-center gap-4">
             <span className="text-4xl">📖</span>

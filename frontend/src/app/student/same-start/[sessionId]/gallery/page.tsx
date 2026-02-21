@@ -179,26 +179,32 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-4">
       <div className="max-w-3xl mx-auto">
-         {/* 헤더 */}
+       {/* 헤더 */}
          <div className="mb-6 flex items-start justify-between">
-           <div>
-             <button
-               onClick={() => router.back()}
-               className="text-sm text-gray-500 hover:text-gray-700 mb-2"
-             >
-               ← 뒤로
-             </button>
-             <h1 className="text-2xl font-bold text-gray-900">
-               이야기 갤러리
-             </h1>
-             <p className="text-sm text-gray-500">
-               {session?.title || '같은 시작, 다른 결말'} · {stories.length}편
-             </p>
-           </div>
-           <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+            <div>
+              <button
+                onClick={() => router.back()}
+                className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+              >
+                ← 뒤로
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">
+                이야기 갤러리
+              </h1>
+              <p className="text-sm text-gray-500">
+                {session?.title || '같은 시작, 다른 결말'} · {stories.length}편
+              </p>
+            </div>
+            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+          </div>
+
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-6">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🖼️ 결말 갤러리</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">같은 시작에서 친구들이 어떤 결말을 만들었는지 구경해 보세요! 나와 다른 결말을 읽어보면 재미있어요.</p>
          </div>
 
-        {/* AI 비교 피드백 */}
+         {/* AI 비교 피드백 */}
         {comparison ? (
           <div className="bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-300 rounded-2xl p-5 mb-6">
             <p className="text-sm font-bold text-amber-800 mb-2">🤖 AI 비교 피드백</p>

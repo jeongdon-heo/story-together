@@ -55,6 +55,13 @@ export default function BranchEntryPage() {
       <div className="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full text-center">
         <div className="text-5xl mb-4">🌿</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">이야기 갈래</h1>
+        
+        {/* 안내 카드 */}
+        <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-4 mb-6 text-left">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🌿 이야기 갈래</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">반 친구들과 함께 이야기 방향을 투표로 결정해요! 참여할 수업 세션을 골라 주세요.</p>
+        </div>
+
         <p className="text-gray-500 text-sm mb-6">
           선생님이 알려준 <span className="font-bold text-emerald-600">입장 코드</span>를 입력하세요
         </p>

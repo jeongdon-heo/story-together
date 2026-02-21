@@ -40,8 +40,14 @@ export default function StudentAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-         <div className="mb-5 flex items-start justify-between">
+       <div className="max-w-2xl mx-auto">
+          {/* 안내 카드 */}
+          <div className="bg-white rounded-2xl border border-green-100 p-4 mb-5">
+            <h3 className="text-sm font-bold text-gray-900 mb-1">📊 학생 개별 통계</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">이 학생의 개별 활동 통계를 상세히 확인할 수 있어요. 작성한 이야기 목록, 글자 수 추이, 획득한 스티커 등을 볼 수 있습니다.</p>
+          </div>
+
+          <div className="mb-5 flex items-start justify-between">
            <div>
              <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700">
                ← 뒤로

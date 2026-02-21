@@ -192,6 +192,12 @@ export default function TeacherStickersPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🌟 칭찬 스티커 사용법</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">반과 학생을 선택한 뒤 스티커를 골라 수여하세요. 일괄 수여도 가능합니다. 하단 '커스텀 스티커' 탭에서 나만의 스티커를 만들 수도 있어요. 학생은 이야기 활동으로도 스티커를 자동 획득합니다.</p>
+        </div>
+
         {/* 탭 */}
         <div className="flex bg-white rounded-2xl border border-teal-100 overflow-hidden shadow-sm">
           {([

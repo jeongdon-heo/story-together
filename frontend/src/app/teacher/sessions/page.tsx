@@ -140,9 +140,15 @@ export default function SessionsPage() {
              </button>
              <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
            </div>
-         </div>
+          </div>
 
-        {/* 세션 생성 폼 */}
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-5">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📋 수업 세션 관리</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">'새 세션 만들기'를 눌러 수업을 시작하세요. 솔로(1:1), 릴레이, 같은 시작, 갈래 모드 중 선택할 수 있어요. 만든 세션은 시작·일시정지·종료 상태로 관리됩니다.</p>
+        </div>
+
+         {/* 세션 생성 폼 */}
         {showCreate && (
           <div className="bg-white rounded-2xl border border-indigo-200 p-5 mb-5 shadow-sm">
             <h2 className="font-bold text-gray-800 mb-4">새 수업 세션 만들기</h2>

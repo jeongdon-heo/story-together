@@ -129,6 +129,12 @@ export default function ExploreDetailPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-5">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📖 이야기 읽기</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">친구가 쓴 이야기를 읽어 보세요. 좋아요와 댓글로 응원해 주세요!</p>
+        </div>
+
         {/* 표지 이미지 */}
         {cover && (
           <div className="rounded-2xl overflow-hidden mb-5 shadow-lg">

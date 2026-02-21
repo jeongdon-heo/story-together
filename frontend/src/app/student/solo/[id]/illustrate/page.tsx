@@ -153,24 +153,30 @@ export default function IllustratePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 to-indigo-50 p-4">
       <div className="max-w-2xl mx-auto">
-        {/* 헤더 */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <button
-              onClick={() => router.back()}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              ← 뒤로
-            </button>
-            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">🎨 이야기 삽화 만들기</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            AI가 이야기 장면을 그림으로 표현해 드려요!
-          </p>
-        </div>
+         {/* 헤더 */}
+         <div className="mb-6">
+           <div className="flex items-center justify-between mb-2">
+             <button
+               onClick={() => router.back()}
+               className="text-sm text-gray-500 hover:text-gray-700"
+             >
+               ← 뒤로
+             </button>
+             <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+           </div>
+           <h1 className="text-2xl font-bold text-gray-900">🎨 이야기 삽화 만들기</h1>
+           <p className="text-sm text-gray-500 mt-1">
+             AI가 이야기 장면을 그림으로 표현해 드려요!
+           </p>
+         </div>
 
-        {/* 스타일 선택 */}
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-5 shadow-sm">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🎨 삽화 만들기</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">내 이야기에 예쁜 그림을 넣어 볼까요? AI가 이야기 장면을 분석하고, 원하는 그림 스타일을 고르면 삽화를 그려 줘요.</p>
+         </div>
+
+         {/* 스타일 선택 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 shadow-sm">
           <h2 className="text-sm font-bold text-gray-700 mb-3">그림 스타일 선택</h2>
           <div className="grid grid-cols-3 gap-2">

@@ -72,13 +72,19 @@ export default function SoloPage() {
           AI와 함께 나만의 동화를 만들어봐요!
         </p>
 
-        {error && (
-          <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
-            {error}
-          </div>
-        )}
+         {error && (
+           <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm text-center">
+             {error}
+           </div>
+         )}
 
-        {/* Step 1: AI 캐릭터 선택 */}
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-6">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">✍️ 1:1 자유 이야기</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">AI 친구와 둘이서 이야기를 만들어요! 먼저 함께할 캐릭터를 고르고, 마음에 드는 주제를 선택하면 이야기가 시작돼요.</p>
+         </div>
+
+         {/* Step 1: AI 캐릭터 선택 */}
         {step === 'character' && (
           <div>
             <h2 className="text-lg font-semibold text-center mb-4">

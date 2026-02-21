@@ -90,22 +90,28 @@ export default function BranchTreePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
       <div className="max-w-2xl mx-auto">
-         {/* 헤더 */}
-         <div className="mb-6 flex items-start justify-between">
-           <div>
-             <button
-               onClick={() => router.back()}
-               className="text-sm text-gray-500 hover:text-gray-700 mb-2"
-             >
-               ← 뒤로
-             </button>
-             <h1 className="text-2xl font-bold text-gray-900">🌿 이야기 트리</h1>
-             <p className="text-sm text-gray-500">갈림길마다 어떤 선택을 했는지 확인하고, 다른 선택지의 이야기도 탐색해 보세요!</p>
-           </div>
-           <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+       {/* 헤더 */}
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <button
+                onClick={() => router.back()}
+                className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+              >
+                ← 뒤로
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">🌿 이야기 트리</h1>
+              <p className="text-sm text-gray-500">갈림길마다 어떤 선택을 했는지 확인하고, 다른 선택지의 이야기도 탐색해 보세요!</p>
+            </div>
+            <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+          </div>
+
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-6">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🌳 이야기 나무</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">이야기가 어떻게 갈라졌는지 나무 모양으로 볼 수 있어요. 각 갈림길을 눌러서 그때 무슨 선택을 했는지 확인해 보세요!</p>
          </div>
 
-        {nodes.length === 0 ? (
+         {nodes.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-4xl mb-3">🌱</p>
             <p className="text-gray-500">아직 갈림길이 없어요</p>

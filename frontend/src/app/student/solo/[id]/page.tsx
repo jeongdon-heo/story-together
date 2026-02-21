@@ -160,9 +160,14 @@ export default function SoloStoryPage() {
         </div>
       </header>
 
-      {/* 이야기 본문 */}
-      <main className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto space-y-4">
+       {/* 이야기 본문 */}
+       <main className="flex-1 overflow-y-auto px-4 py-6">
+         <div className="max-w-2xl mx-auto space-y-4">
+           {/* 안내 카드 */}
+           <div className="bg-white rounded-2xl border border-indigo-100 p-4">
+             <h3 className="text-sm font-bold text-gray-900 mb-1">✍️ 이야기 쓰기</h3>
+             <p className="text-xs text-gray-500 leading-relaxed">AI 친구와 번갈아 가며 이야기를 써요. 글을 쓰고 보내기를 누르면 AI가 이어서 써 줘요. 막히면 '힌트' 버튼을 눌러 보세요! 이야기를 마치려면 '마무리' 버튼을 누르세요.</p>
+           </div>
           {story.parts.map((part) => (
             <div
               key={part.id}

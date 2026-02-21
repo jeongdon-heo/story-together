@@ -31,11 +31,17 @@ export default function AnalyticsIndexPage() {
            <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
          </div>
 
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : classes.length === 0 ? (
+       {/* 안내 카드 */}
+       <div className="bg-white rounded-2xl border border-green-100 p-4 mb-5">
+         <h3 className="text-sm font-bold text-gray-900 mb-1">📊 활동 통계</h3>
+         <p className="text-xs text-gray-500 leading-relaxed">반별·세션별·학생별 활동 통계를 확인할 수 있어요. 반을 선택하면 이야기 수, 총 글자 수, 활동 빈도 등 상세 분석을 볼 수 있습니다.</p>
+       </div>
+
+       {loading ? (
+           <div className="flex justify-center py-10">
+             <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+           </div>
+         ) : classes.length === 0 ? (
           <div className="text-center py-10 text-gray-400">
             <p className="text-4xl mb-3">🏫</p>
             <p className="text-sm mb-4">아직 반이 없습니다</p>

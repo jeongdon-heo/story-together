@@ -77,6 +77,12 @@ export default function TeacherHome() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📋 대시보드 사용법</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">교사 대시보드에서 반 관리, 수업 세션, 학생 계정, 통계 등 모든 기능에 빠르게 접근할 수 있어요. 진행 중인 수업이 있으면 상단에 바로가기가 표시됩니다.</p>
+        </div>
+
         {/* 활성 세션 알림 */}
         {activeSessions.length > 0 && (
           <div className="bg-green-500 rounded-2xl p-4 text-white">

@@ -269,6 +269,12 @@ export default function StoriesPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📚 내 이야기 모음</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">지금까지 내가 쓴 이야기를 모아 볼 수 있어요. 아직 안 끝난 이야기는 이어서 쓰고, 완성된 이야기는 삽화를 만들거나 동화책으로 볼 수 있어요.</p>
+        </div>
+
         {/* 통계 요약 */}
         {!loading && stories.length > 0 && (
           <div className="flex items-center gap-3 mb-4">

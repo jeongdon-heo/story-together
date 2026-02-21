@@ -189,6 +189,12 @@ export default function StudentStickersPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🎖️ 내 스티커 도감</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">내가 모은 칭찬 스티커를 구경해요! 이야기를 많이 쓰면 새 스티커를 자동으로 얻을 수 있고, 선생님이 직접 주시는 특별 스티커도 있어요. 대표 스티커를 설정해 보세요!</p>
+        </div>
+
         {/* 요약 카드 */}
         {summary && (
           <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-5">

@@ -63,15 +63,12 @@ export default function TeacherExplorePage() {
         <a href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</a>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 py-6 space-y-4">
-        {/* 안내 */}
-        <div className="bg-white rounded-2xl border border-green-100 p-4 text-sm text-gray-600">
-          <p className="font-semibold text-gray-900 mb-1">📋 승인 대기 목록</p>
-          <p className="text-xs text-gray-400">
-            학생이 공개를 신청한 이야기를 검토하고 승인하거나 거부해요.
-            승인된 이야기는 탐색 페이지에 공개됩니다.
-          </p>
-        </div>
+       <div className="max-w-xl mx-auto px-4 py-6 space-y-4">
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-green-100 p-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🌍 이야기 공개 승인</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">학생들이 공개 신청한 이야기를 검토하고 승인 또는 거부할 수 있어요. 승인된 이야기는 다른 학생들이 탐색 페이지에서 볼 수 있게 됩니다.</p>
+         </div>
 
         {/* 결과 메시지 */}
         {result && (

@@ -75,9 +75,15 @@ export default function StudentsPage() {
              <h1 className="text-2xl font-bold">학생 계정 관리</h1>
            </div>
            <a href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</a>
-         </div>
+          </div>
 
-        {/* 탭 */}
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">👨‍🎓 학생 계정 관리</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">학생 계정을 개별 또는 일괄(엑셀)로 만들 수 있어요. 계정을 만든 뒤 '로그인 카드 인쇄' 버튼으로 학생에게 나눠줄 카드를 출력하세요. 비밀번호 초기화도 이곳에서 가능합니다.</p>
+        </div>
+
+         {/* 탭 */}
         <div className="flex gap-2 mb-6">
           {([
             ['list', '학생 목록'],

@@ -59,11 +59,17 @@ export default function SameStartEntryPage() {
           선생님이 알려준 <span className="font-bold text-amber-600">입장 코드</span>를 입력하세요
         </p>
 
-        {error && (
-          <p className="text-red-500 text-sm mb-3 bg-red-50 rounded-xl px-3 py-2">{error}</p>
-        )}
+         {error && (
+           <p className="text-red-500 text-sm mb-3 bg-red-50 rounded-xl px-3 py-2">{error}</p>
+         )}
 
-        <input
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🌟 같은 시작, 다른 결말</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">모두 같은 이야기로 시작해서 나만의 결말을 만들어요! 참여할 수업 세션을 골라 주세요.</p>
+         </div>
+
+         <input
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="예: AB3D5E"

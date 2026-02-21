@@ -411,9 +411,15 @@ export default function RelayPage() {
         </div>
       </header>
 
-      {/* 이야기 본문 */}
-      <main className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full px-4 py-4">
-        {storyParts.map((part) => (
+       {/* 이야기 본문 */}
+       <main className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full px-4 py-4">
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🔗 릴레이 진행 중</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">내 차례가 오면 이야기를 이어서 써 주세요! 타이머가 끝나기 전에 글을 완성해야 해요. 다른 친구가 쓸 때는 실시간으로 구경할 수 있어요.</p>
+         </div>
+
+         {storyParts.map((part) => (
           <StoryPartCard
             key={part.id}
             part={part}

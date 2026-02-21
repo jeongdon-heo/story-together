@@ -84,10 +84,16 @@ export default function ClassDetailPage() {
                )}
                <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
              </div>
-           </div>
-         </div>
+          </div>
+        </div>
 
-        {/* 멤버 목록 */}
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🏫 반 상세 정보</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">반의 정보와 소속 학생 목록을 확인할 수 있어요. 참여 코드를 공유하여 학생을 초대하거나, 반 이름·학년을 수정할 수 있습니다.</p>
+        </div>
+
+         {/* 멤버 목록 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-5 py-4 border-b border-gray-200">
             <h2 className="font-semibold">반 멤버</h2>

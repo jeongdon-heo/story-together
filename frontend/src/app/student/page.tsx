@@ -61,24 +61,30 @@ export default function StudentHome() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
       <div className="max-w-2xl mx-auto">
         {/* 인사말 */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              안녕, {user?.name}! 👋
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              오늘은 어떤 이야기를 써볼까요?
-            </p>
-          </div>
-          <button
-            onClick={logout}
-            className="text-sm text-gray-400 hover:text-gray-600"
-          >
-            로그아웃
-          </button>
-        </div>
+         <div className="mb-8 flex items-center justify-between">
+           <div>
+             <h1 className="text-2xl font-bold text-gray-900">
+               안녕, {user?.name}! 👋
+             </h1>
+             <p className="text-gray-500 text-sm mt-1">
+               오늘은 어떤 이야기를 써볼까요?
+             </p>
+           </div>
+           <button
+             onClick={logout}
+             className="text-sm text-gray-400 hover:text-gray-600"
+           >
+             로그아웃
+           </button>
+         </div>
 
-        {/* 이야기 모드 선택 */}
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🏠 내 이야기 공간</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">여기서 새 이야기를 시작하거나 이전에 쓴 이야기를 이어서 쓸 수 있어요. 원하는 이야기 모드를 골라 보세요!</p>
+         </div>
+
+         {/* 이야기 모드 선택 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {MODES.map((mode) => {
             const disabled = isGuest && mode.id !== 'solo';

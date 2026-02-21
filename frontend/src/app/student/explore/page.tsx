@@ -168,6 +168,12 @@ export default function ExplorePage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🌍 이야기 탐색</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">다른 친구들이 쓴 이야기를 구경해 보세요! 마음에 드는 이야기에 좋아요를 눌러 주세요. 인기 이야기는 명예의 전당에 올라가요!</p>
+        </div>
+
         {/* 결과 수 */}
         {!loading && (
           <p className="text-xs text-gray-400 mb-4">

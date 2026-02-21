@@ -343,6 +343,12 @@ export default function BranchPage() {
 
       {/* 본문 */}
       <main className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full px-4 py-4">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🌿 갈래 투표</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">AI가 보여주는 갈림길에서 원하는 방향에 투표하세요! 가장 많은 표를 받은 방향으로 이야기가 진행돼요.</p>
+        </div>
+
         {/* 이야기 파트 */}
         {storyParts.map((part) => (
           <StoryPartCard key={part.id} part={part} />

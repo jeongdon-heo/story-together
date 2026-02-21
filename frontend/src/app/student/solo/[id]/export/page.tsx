@@ -179,18 +179,24 @@ export default function StoryExportPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
-        {/* 이야기 요약 */}
-        <div className="bg-white rounded-2xl border border-violet-100 p-5 flex items-center gap-4">
-          <span className="text-4xl">📖</span>
-          <div>
-            <p className="font-bold text-gray-900">나의 이야기</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {partCount}개 파트 · {wordCount.toLocaleString()}자
-            </p>
-          </div>
-        </div>
+         {/* 이야기 요약 */}
+         <div className="bg-white rounded-2xl border border-violet-100 p-5 flex items-center gap-4">
+           <span className="text-4xl">📖</span>
+           <div>
+             <p className="font-bold text-gray-900">나의 이야기</p>
+             <p className="text-xs text-gray-400 mt-0.5">
+               {partCount}개 파트 · {wordCount.toLocaleString()}자
+             </p>
+           </div>
+         </div>
 
-        {/* 내보내기 유형 선택 */}
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">📤 내보내기</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">내 이야기를 파일로 저장할 수 있어요. PDF 동화책, 오디오 북 등 원하는 형태로 내보내 보세요!</p>
+         </div>
+
+         {/* 내보내기 유형 선택 */}
         <div className="grid grid-cols-2 gap-3">
           {(['pdf', 'audio'] as ExportType[]).map((type) => {
             const info = EXPORT_TYPE_LABELS[type];

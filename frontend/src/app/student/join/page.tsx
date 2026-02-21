@@ -52,13 +52,19 @@ export default function JoinClassPage() {
           </div>
         )}
 
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
-            {success}
-          </div>
-        )}
+         {success && (
+           <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
+             {success}
+           </div>
+         )}
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+         {/* 안내 카드 */}
+         <div className="bg-white rounded-2xl border border-indigo-100 p-4 mb-4">
+           <h3 className="text-sm font-bold text-gray-900 mb-1">🏫 반 참여하기</h3>
+           <p className="text-xs text-gray-500 leading-relaxed">선생님이 알려준 참여 코드를 입력하면 반에 들어갈 수 있어요. 코드를 정확히 입력해 주세요!</p>
+         </div>
+
+         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               참여 코드

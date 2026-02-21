@@ -273,6 +273,12 @@ export default function SameStartStoryPage() {
 
       {/* 이야기 본문 */}
       <main className="flex-1 overflow-y-auto max-w-2xl mx-auto w-full px-4 py-4 space-y-3">
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-indigo-100 p-4">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🌟 나만의 결말 쓰기</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">같은 시작 이야기를 읽고, 나만의 이야기를 이어서 써 보세요! 다 쓰면 친구들과 결말을 비교해 볼 수 있어요.</p>
+        </div>
+
         {story.parts.map((part) => {
           const isAi = part.authorType === 'ai';
           const isIntro = part.metadata?.isIntro;

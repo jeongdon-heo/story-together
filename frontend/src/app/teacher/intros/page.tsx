@@ -150,9 +150,15 @@ export default function IntrosPage() {
              </button>
              <a href="/teacher" className="text-gray-400 hover:text-gray-700 flex items-center" title="홈으로">🏠</a>
            </div>
-         </div>
+          </div>
 
-        {error && (
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📝 도입부 관리</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">'같은 시작, 다른 결말' 모드에서 사용할 공통 도입부를 미리 작성해 두는 곳이에요. 학년·주제별로 도입부를 만들어 수업에 활용하세요.</p>
+        </div>
+
+         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
             {error}
           </div>

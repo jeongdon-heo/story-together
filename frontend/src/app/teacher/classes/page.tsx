@@ -96,10 +96,16 @@ export default function ClassesPage() {
                {showCreate ? '취소' : '새 반 만들기'}
              </button>
              <Link href="/teacher" className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</Link>
-           </div>
-         </div>
+          </div>
+        </div>
 
-        {/* 반 생성 폼 */}
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-6">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">🏫 반 관리 사용법</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">'반 만들기'를 눌러 새 반을 만들 수 있어요. 반을 만들면 참여 코드가 자동 생성되며, 이 코드를 학생에게 알려주면 학생이 직접 반에 가입할 수 있어요.</p>
+        </div>
+
+         {/* 반 생성 폼 */}
         {showCreate && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">새 반 만들기</h2>

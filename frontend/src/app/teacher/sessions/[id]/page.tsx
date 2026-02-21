@@ -265,10 +265,16 @@ export default function SessionDetailPage() {
                 📚 문집
               </button>
             </div>
-          </div>
+           </div>
+         </div>
+
+        {/* 안내 카드 */}
+        <div className="bg-white rounded-2xl border border-green-100 p-4 mb-5">
+          <h3 className="text-sm font-bold text-gray-900 mb-1">📋 세션 상세 관리</h3>
+          <p className="text-xs text-gray-500 leading-relaxed">이 세션의 진행 상태를 관리하고 학생들의 이야기를 실시간으로 확인할 수 있어요. 세션 시작·일시정지·종료 버튼으로 수업 흐름을 제어하세요.</p>
         </div>
 
-        {/* 릴레이/같은시작/분기 → 입장코드 패널 */}
+         {/* 릴레이/같은시작/분기 → 입장코드 패널 */}
         {(isRelay || isSameStart || isBranch) && session.status !== 'completed' && (
           <RelayCodePanel session={session} />
         )}
