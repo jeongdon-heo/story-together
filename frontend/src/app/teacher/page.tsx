@@ -36,8 +36,10 @@ export default function TeacherHome() {
           classApi.getAll(),
           getSessions({ status: 'active' }),
         ]);
-        setClasses(classRes.data);
-        setActiveSessions(sessionRes);
+        setClasses(classRes.data ?? []);
+        setActiveSessions(sessionRes ?? []);
+      } catch (err) {
+        console.error('[Dashboard] 데이터 로드 실패:', err);
       } finally {
         setLoading(false);
       }
@@ -46,14 +48,14 @@ export default function TeacherHome() {
   }, []);
 
   const NAV_ITEMS = [
-    { href: '/teacher/classes',   emoji: '🏫', label: '반 관리',    desc: `${classes.length}개 반` },
-    { href: '/teacher/sessions',  emoji: '📋', label: '수업 세션',  desc: `${activeSessions.length}개 진행 중` },
-    { href: '/teacher/students',  emoji: '👨‍🎓', label: '학생 계정', desc: '계정 생성·관리' },
-    { href: '/teacher/analytics', emoji: '📊', label: '통계',       desc: '이야기·활동 분석' },
-    { href: '/teacher/intros',    emoji: '📝', label: '도입부 관리', desc: '같은 시작 모드' },
-    { href: '/teacher/stickers',         emoji: '🌟', label: '칭찬 스티커', desc: '수여·현황' },
-    { href: '/teacher/export/collection', emoji: '📚', label: '문집 만들기',  desc: '이야기 모음 PDF' },
-    { href: '/teacher/explore',           emoji: '🌍', label: '이야기 승인',  desc: '공개 신청 검토' },
+    { href: '/teacher/classes',   emoji: '🏫', label: '반 관리',    desc: `${classes.length}개 반`, loading: true },
+    { href: '/teacher/sessions',  emoji: '📋', label: '수업 세션',  desc: `${activeSessions.length}개 진행 중`, loading: true },
+    { href: '/teacher/students',  emoji: '👨‍🎓', label: '학생 계정', desc: '계정 생성·관리', loading: false },
+    { href: '/teacher/analytics', emoji: '📊', label: '통계',       desc: '이야기·활동 분석', loading: false },
+    { href: '/teacher/intros',    emoji: '📝', label: '도입부 관리', desc: '같은 시작 모드', loading: false },
+    { href: '/teacher/stickers',         emoji: '🌟', label: '칭찬 스티커', desc: '수여·현황', loading: false },
+    { href: '/teacher/export/collection', emoji: '📚', label: '문집 만들기',  desc: '이야기 모음 PDF', loading: false },
+    { href: '/teacher/explore',           emoji: '🌍', label: '이야기 승인',  desc: '공개 신청 검토', loading: false },
   ];
 
   return (
@@ -84,7 +86,7 @@ export default function TeacherHome() {
         </div>
 
         {/* 활성 세션 알림 */}
-        {activeSessions.length > 0 && (
+        {!loading && activeSessions.length > 0 && (
           <div className="bg-green-500 rounded-2xl p-4 text-white">
             <p className="text-sm font-semibold mb-2">
               🟢 지금 진행 중인 수업 {activeSessions.length}개
@@ -115,7 +117,13 @@ export default function TeacherHome() {
                 {item.emoji}
               </div>
               <p className="font-bold text-gray-900 text-sm">{item.label}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {loading && item.loading ? (
+                  <span className="inline-block w-16 h-3 bg-gray-200 rounded animate-pulse" />
+                ) : (
+                  item.desc
+                )}
+              </p>
             </Link>
           ))}
         </div>
