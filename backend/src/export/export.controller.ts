@@ -107,6 +107,14 @@ export class ExportController {
     return { data };
   }
 
+  // 내보내기 가능한 이야기 목록 (세션 기준) — 정적 경로를 동적 경로보다 먼저 선언
+  @Get('stories')
+  @Roles('teacher')
+  async getExportableStories(@Query('sessionId') sessionId: string) {
+    const data = await this.exportService.getExportableStories(sessionId);
+    return { data };
+  }
+
   // HTML 콘텐츠 반환 (PDF 인쇄용)
   @Public()
   @Get(':jobId/html')
@@ -120,14 +128,6 @@ export class ExportController {
   @Get(':jobId/status')
   getJobStatus(@Param('jobId') jobId: string) {
     const data = this.exportService.getJobStatus(jobId);
-    return { data };
-  }
-
-  // 내보내기 가능한 이야기 목록 (세션 기준)
-  @Get('stories')
-  @Roles('teacher')
-  async getExportableStories(@Query('sessionId') sessionId: string) {
-    const data = await this.exportService.getExportableStories(sessionId);
     return { data };
   }
 }

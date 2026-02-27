@@ -165,7 +165,7 @@ export function useTeacherMonitor({ storyId, enabled }: UseTeacherMonitorOptions
     });
 
     return () => {
-      socket.emit('leave_session', { sessionId: '', userId: '' });
+      socket.emit('teacher:leave_monitor', { storyId });
       [
         'connect', 'disconnect',
         'teacher:story_snapshot',

@@ -160,7 +160,13 @@ export class BranchService {
     });
 
     const grade = story.session?.classRoom?.grade || 3;
-    const depth = parentNodeId ? (story.branchNodes[0]?.depth ?? 0) + 1 : 0;
+
+    // 부모 노드의 depth를 기반으로 계산 (전체 최대 depth가 아님)
+    let depth = 0;
+    if (parentNodeId) {
+      const parentNode = await this.prisma.branchNode.findUnique({ where: { id: parentNodeId } });
+      depth = (parentNode?.depth ?? 0) + 1;
+    }
 
     const parts = story.parts.map((p) => ({
       role: (p.authorType === 'ai' ? 'assistant' : 'user') as 'user' | 'assistant',

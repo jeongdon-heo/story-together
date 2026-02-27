@@ -142,6 +142,11 @@ export class StoryService {
       throw new ForbiddenException('이미 완료된 이야기입니다');
     }
 
+    // solo/same_start 모드 소유권 검증
+    if (story.userId && story.userId !== userId) {
+      throw new ForbiddenException('이 이야기에 쓸 권한이 없습니다');
+    }
+
     const nextOrder = story.parts.length + 1;
     const grade = story.session?.classRoom?.grade || 3;
 
@@ -219,6 +224,11 @@ export class StoryService {
 
     if (story.status !== 'writing') {
       throw new ForbiddenException('이미 완료된 이야기입니다');
+    }
+
+    // 소유권 검증: 본인 이야기이거나 교사만 완료 가능
+    if (story.userId && story.userId !== userId) {
+      throw new ForbiddenException('이 이야기를 완료할 권한이 없습니다');
     }
 
     const grade = story.session?.classRoom?.grade || 3;

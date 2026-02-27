@@ -61,8 +61,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await authApi.guest(data);
-      const { accessToken, user } = res.data;
+      const { accessToken, refreshToken, user } = res.data;
       localStorage.setItem('accessToken', accessToken);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
       set({ user, isLoading: false });
     } catch (error) {
       set({ isLoading: false });

@@ -167,7 +167,9 @@ export class PublishService {
           classRoom: { select: { name: true, grade: true } },
           _count: { select: { comments: true } },
         },
-        orderBy: sort === 'popular' ? { likeCount: 'desc' } : { publishedAt: 'desc' },
+        orderBy: sort === 'popular'
+          ? [{ likeCount: 'desc' }, { publishedAt: 'desc' }]
+          : { publishedAt: 'desc' },
         skip,
         take: PAGE_SIZE,
       }),

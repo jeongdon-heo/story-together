@@ -134,6 +134,20 @@ export class StickerService implements OnModuleInit {
       0,
     );
 
+    // 릴레이 참여 수 (릴레이 세션에서 작성한 파트 수)
+    const relayCount = await this.prisma.storyPart.count({
+      where: {
+        authorId: userId,
+        authorType: 'student',
+        story: { session: { mode: 'relay' } },
+      },
+    });
+
+    // 분기 투표 수
+    const branchCount = await this.prisma.vote.count({
+      where: { userId },
+    });
+
     const progress = conditionDefs
       .filter((d) => (d.condition as any)?.type)
       .map((d) => {
@@ -141,6 +155,8 @@ export class StickerService implements OnModuleInit {
         let current = 0;
         if (cond.type === 'story_count') current = storyCount;
         else if (cond.type === 'word_count') current = wordTotal;
+        else if (cond.type === 'relay_count') current = relayCount;
+        else if (cond.type === 'branch_count') current = branchCount;
         return {
           code: d.code,
           name: d.name,

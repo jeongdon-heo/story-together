@@ -98,13 +98,15 @@ export function useBranchSocket({
       setHints(data.hints);
     });
 
+    let rejectTimer: ReturnType<typeof setTimeout> | null = null;
     socket.on('branch:content_rejected', (data: any) => {
       setContentRejected({ reason: data.reason, suggestion: data.suggestion });
-      // 3초 후 자동 해제
-      setTimeout(() => setContentRejected(null), 5000);
+      if (rejectTimer) clearTimeout(rejectTimer);
+      rejectTimer = setTimeout(() => setContentRejected(null), 5000);
     });
 
     return () => {
+      if (rejectTimer) clearTimeout(rejectTimer);
       socket.emit('leave_session', { sessionId, userId });
       [
         'participant_list', 'participant_joined', 'participant_left',

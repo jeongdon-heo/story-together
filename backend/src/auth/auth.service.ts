@@ -72,8 +72,8 @@ export class AuthService {
   // 게스트 로그인
   async guestLogin(name: string) {
     const user = await this.userService.createGuest(name);
-    const accessToken = this.generateAccessToken(user);
-    return { accessToken, user: this.sanitizeUser(user) };
+    const tokens = await this.generateTokens(user);
+    return { ...tokens, user: this.sanitizeUser(user) };
   }
 
   // OAuth 로그인/가입 (Google)

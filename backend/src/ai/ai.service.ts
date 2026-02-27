@@ -256,7 +256,9 @@ ${storyText}
 [이야기 전체 내용]
 ${storyContext}
 
-위 이야기를 읽고 마지막 장면에서 바로 이어지는 결말을 작성해주세요. 절대 물음표(?)를 사용하지 마세요.`;
+위 이야기를 읽고 마지막 장면에서 바로 이어지는 결말을 작성해주세요.
+[필수] 절대 물음표(?)를 사용하지 마세요. 마지막 문장은 반드시 서술형(~했답니다, ~이었어요)으로 끝내세요.
+[필수] 100% 한국어로만 작성하세요. 영어 단어를 절대 사용하지 마세요.`;
 
     this.logger.log(`generateEnding: systemPrompt=${systemPrompt.length}자, userMessage=${userMessage.length}자`);
 
@@ -744,7 +746,12 @@ partOrder는 해당 장면이 나오는 StoryPart의 order 값입니다.`;
 
       const text = response.text || '';
       const clean = text.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean) as T;
+      try {
+        return JSON.parse(clean) as T;
+      } catch (parseError) {
+        this.logger.error(`JSON 파싱 실패: ${clean.substring(0, 200)}`);
+        throw new InternalServerErrorException('AI 응답 파싱에 실패했습니다. 다시 시도해주세요.');
+      }
     });
   }
 }
