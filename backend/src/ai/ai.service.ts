@@ -92,16 +92,20 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 
 - 주인공과 배경을 소개하세요.
 - 학생이 흥미를 가지고 이어쓸 수 있는 상황을 만들어주세요.
-- ${gc.sentenceLen}으로 작성하세요.`;
+- ${gc.sentenceLen}으로 작성하세요.
+- 절대 물음표(?)를 사용하지 마세요. 마지막 문장은 반드시 서술형(~했습니다, ~있었어요)으로 끝내세요.
+- 100% 한국어로만 작성하세요. 영어 단어를 절대 사용하지 마세요.`;
 
     try {
-      return await this.callGeminiText(systemPrompt, [
+      let result = await this.callGeminiText(systemPrompt, [
         { role: 'user', content: userMessage },
       ]);
+      result = this.postProcessStoryText(result);
+      return result;
     } catch (error) {
       this.logger.warn('이야기 시작 생성 API 호출 실패, 기본 텍스트 사용:', error);
       return this.fallbackStoryStarts[theme.label]
-        || `옛날 옛적에 아주 먼 곳에 작은 마을이 있었어요. 그 마을에는 ${theme.label}에 대한 신비한 이야기가 전해지고 있었어요. 어느 날, 용감한 아이가 그 비밀을 알아내기로 했어요. 과연 어떤 모험이 기다리고 있을까요?`;
+        || `옛날 옛적에 아주 먼 곳에 작은 마을이 있었어요. 그 마을에는 ${theme.label}에 대한 신비한 이야기가 전해지고 있었어요. 어느 날, 용감한 아이가 그 비밀을 알아내기로 했어요.`;
     }
   }
 
@@ -131,7 +135,10 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 
 ${storyText}
 
-위 이야기에 이어지는 다음 장면을 작성하세요. 절대 물음표(?)를 사용하지 마세요. 마지막 문장은 반드시 서술형(~했습니다, ~있었습니다)으로 끝내세요.`;
+위 이야기에 이어지는 다음 장면을 작성하세요.
+[필수] 절대 물음표(?)를 사용하지 마세요. "~할까요?", "~일까요?" 같은 질문형 문장을 쓰지 마세요.
+[필수] 마지막 문장은 반드시 서술형(~했습니다, ~있었습니다, ~이었답니다)으로 끝내세요.
+[필수] 100% 한국어로만 작성하세요. 영어 단어를 절대 쓰지 마세요.`;
 
     this.logger.log(`continueStory: parts=${previousParts.length}, msgLen=${userMessage.length}`);
 
@@ -151,18 +158,38 @@ ${storyText}
     }
   }
 
-  // 후처리: 물음표 제거 + 비한국어 텍스트 검증
+  // 후처리: 물음표 제거 + 영어 제거 + 깨진 문자 정리 + 비한국어 검증
   private postProcessStoryText(text: string): string {
-    // 1. 마지막 문장이 물음표로 끝나면 제거
-    const sentences = text.split(/(?<=[.!?])\s+/);
-    while (sentences.length > 1 && sentences[sentences.length - 1].trim().endsWith('?')) {
-      sentences.pop();
-    }
-    let result = sentences.join(' ');
+    let result = text;
 
-    // 2. 한국어가 아닌 문자가 대부분이면 에러
+    // 1. 깨진 유니코드/NULL 문자 제거
+    result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\uFFFD]/g, '');
+
+    // 2. 영어 단어/문장 제거 (한국어 문장 사이에 끼어든 영어)
+    // 영어 단어가 3자 이상 연속이면 제거 (단, 문장 전체가 영어인 경우도 처리)
+    result = result.replace(/[A-Za-z]{3,}[\s,.'!?A-Za-z]*/g, '').trim();
+    // 불필요한 공백 정리
+    result = result.replace(/\s{2,}/g, ' ').trim();
+
+    // 3. 물음표로 끝나는 문장 제거 (마지막뿐 아니라 전체에서)
+    const sentences = result.split(/(?<=[.!?。])\s*/);
+    const filtered = sentences.filter(s => {
+      const trimmed = s.trim();
+      if (!trimmed) return false;
+      // 물음표로 끝나는 문장 제거
+      if (trimmed.endsWith('?')) return false;
+      return true;
+    });
+    result = filtered.join(' ');
+
+    // 4. 결과가 너무 짧으면 (문장 제거로 인해) 원본 사용하되 물음표만 마침표로 교체
+    if (result.length < 20 && text.length >= 20) {
+      result = text.replace(/\?/g, '.').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // 5. 한국어가 아닌 문자가 대부분이면 에러
     const koreanChars = (result.match(/[\uAC00-\uD7AF\u3131-\u3163\u1100-\u11FF]/g) || []).length;
-    const totalChars = result.replace(/[\s\d.,!'"()\-:;]/g, '').length;
+    const totalChars = result.replace(/[\s\d.,!'"()\-:;~]/g, '').length;
     if (totalChars > 0 && koreanChars / totalChars < 0.5) {
       this.logger.error(`비한국어 응답 감지: korean=${koreanChars}/${totalChars}, text=${result.substring(0, 100)}`);
       throw new InternalServerErrorException('AI가 한국어가 아닌 응답을 생성했습니다. 다시 시도해주세요.');
@@ -387,10 +414,12 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 선택의 결과를 자연스럽게 보여주고, 다음 단계로 이어질 수 있게 끝맺으세요.`;
 
     try {
-      return await this.callGeminiText(systemPrompt, [
+      let result = await this.callGeminiText(systemPrompt, [
         ...previousParts,
-        { role: 'user', content: `"${selectedChoice.text}" 방향으로 이야기를 이어주세요.` },
+        { role: 'user', content: `"${selectedChoice.text}" 방향으로 이야기를 이어주세요. 물음표(?)를 절대 사용하지 마세요. 서술형으로 끝내세요. 한국어로만 작성하세요.` },
       ]);
+      result = this.postProcessStoryText(result);
+      return result;
     } catch (error) {
       this.logger.warn('갈래 이야기 생성 API 호출 실패, 기본 텍스트 사용:', error);
       return `"${selectedChoice.text}" 쪽을 선택한 주인공은 떨리는 마음으로 앞으로 나아갔어요. 처음에는 조금 무서웠지만, 한 걸음 한 걸음 나아갈수록 점점 신기한 것들이 보이기 시작했어요. 그리고 저 앞에서 반짝이는 무언가가 주인공을 기다리고 있었어요.`;
@@ -412,10 +441,12 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
 "만약에 이 길을 선택했다면..." 또는 "다른 선택을 했더라면..."으로 시작하세요.`;
 
     try {
-      return await this.callGeminiText(systemPrompt, [
+      let result = await this.callGeminiText(systemPrompt, [
         ...previousParts,
-        { role: 'user', content: `만약에 "${rejectedChoice.text}"를 선택했다면 어떻게 됐을까요?` },
+        { role: 'user', content: `만약에 "${rejectedChoice.text}"를 선택했다면 어떻게 됐을지 서술형으로 작성해주세요. 물음표를 사용하지 마세요. 한국어로만 작성하세요.` },
       ]);
+      result = this.postProcessStoryText(result);
+      return result;
     } catch (error) {
       this.logger.warn('"만약에" 이야기 생성 API 호출 실패, 기본 텍스트 사용:', error);
       return `만약에 "${rejectedChoice.text}" 쪽을 선택했다면 어떻게 됐을까요? 아마 전혀 다른 모험이 펼쳐졌을 거예요. 새로운 장소에서 새로운 친구를 만나고, 예상치 못한 놀라운 일이 벌어졌을지도 몰라요. 하지만 그건 또 다른 이야기랍니다.`;
@@ -452,7 +483,7 @@ ${grade}학년이 쉽게 이해하고 이어쓸 수 있어야 합니다.`;
       ]);
     } catch (error) {
       this.logger.warn('도입부 생성 API 호출 실패, 기본 텍스트 사용:', error);
-      return `옛날 옛적에, ${theme.label}${theme.label.endsWith('의') ? '' : '과(와)'} 관련된 신비한 이야기가 전해지는 마을이 있었어요. 그 마을에는 호기심 많은 아이들이 살고 있었는데, 어느 날 아주 특별한 일이 벌어졌어요. 아무도 예상하지 못한 일이 일어나려 하고 있었지요. 과연 무슨 일이 기다리고 있을까요?`;
+      return `옛날 옛적에, ${theme.label}${theme.label.endsWith('의') ? '' : '과(와)'} 관련된 신비한 이야기가 전해지는 마을이 있었어요. 그 마을에는 호기심 많은 아이들이 살고 있었는데, 어느 날 아주 특별한 일이 벌어졌어요. 아무도 예상하지 못한 놀라운 모험이 시작되려 하고 있었답니다.`;
     }
   }
 
