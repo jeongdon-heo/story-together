@@ -356,6 +356,74 @@ export class RealtimeGateway
     await this.branchService.finishStory(data.storyId);
   }
 
+  // ─── 교사 실시간 모니터링 ──────────────────────────────
+  @SubscribeMessage('teacher:join_monitor')
+  async handleTeacherJoinMonitor(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { storyId: string },
+  ) {
+    const userId = (client as any).userId;
+    if (!userId) return;
+
+    // 교사인지 확인
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'teacher') return;
+
+    const room = `story:${data.storyId}`;
+    await client.join(room);
+
+    this.socketMeta.set(client.id, { userId, storyId: data.storyId });
+    this.logger.log(`교사 모니터링 참여: ${userId} → room=${room}`);
+
+    // 현재 이야기 파트 전송
+    const story = await this.prisma.story.findUnique({
+      where: { id: data.storyId },
+      include: { parts: { orderBy: { order: 'asc' } } },
+    });
+    if (story) {
+      client.emit('teacher:story_snapshot', {
+        storyId: data.storyId,
+        parts: story.parts.map((p) => ({
+          id: p.id,
+          authorType: p.authorType,
+          authorId: p.authorId,
+          text: p.text,
+          order: p.order,
+          metadata: p.metadata,
+        })),
+        status: story.status,
+      });
+    }
+
+    // 릴레이 상태 전송
+    const relayState = this.relayService.getState(data.storyId);
+    if (relayState && relayState.isRunning) {
+      const current = relayState.participants[relayState.currentIdx];
+      const nextIdx = (relayState.currentIdx + 1) % relayState.participants.length;
+      const next = relayState.participants[nextIdx];
+      client.emit('relay:turn_changed', {
+        currentStudentId: current.userId,
+        currentStudentName: current.name,
+        nextStudentId: next.userId,
+        nextStudentName: next.name,
+        turnNumber: relayState.currentIdx + 1,
+      });
+    }
+
+    // 참여자 목록 전송
+    const relayParticipants = this.relayService.getParticipants(data.storyId);
+    const branchParticipants = this.branchService.getParticipants(data.storyId);
+    const participants = relayParticipants.length > 0 ? relayParticipants : branchParticipants;
+    client.emit('participant_list', {
+      participants: participants.map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        color: p.color,
+        online: p.online,
+      })),
+    });
+  }
+
   // 교사 전용
   @SubscribeMessage('teacher:force_vote_decide')
   async handleForceVoteDecide(

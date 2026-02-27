@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -17,6 +17,7 @@ import {
   type StoryPartInfo,
 } from '../../../../lib/teacher-api';
 import { getSessionAnalytics, type SessionAnalytics } from '../../../../lib/analytics-api';
+import { useTeacherMonitor } from '../../../../hooks/useTeacherMonitor';
 
 const MODE_EMOJI: Record<string, string> = {
   solo: '✍️', relay: '🔗', same_start: '🌟', branch: '🌿',
@@ -106,10 +107,30 @@ export default function SessionDetailPage() {
   const [stories, setStories] = useState<StoryInfo[]>([]);
   const [analytics, setAnalytics] = useState<SessionAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'stories' | 'flagged' | 'analytics'>('stories');
+  const [activeTab, setActiveTab] = useState<'live' | 'stories' | 'flagged' | 'analytics'>('stories');
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
   const [editingPart, setEditingPart] = useState<{ id: string; text: string } | null>(null);
   const [actioning, setActioning] = useState(false);
+
+  // 릴레이/분기 모드 실시간 모니터링
+  const isLiveMode = session && (session.mode === 'relay' || session.mode === 'branch') && session.status === 'active';
+  const liveStoryId = isLiveMode && stories.length > 0 ? stories[0].id : null;
+  const monitor = useTeacherMonitor({ storyId: liveStoryId, enabled: !!isLiveMode });
+  const livePartsEndRef = useRef<HTMLDivElement>(null);
+
+  // 실시간 모드면 기본 탭을 'live'로
+  useEffect(() => {
+    if (isLiveMode && activeTab === 'stories') {
+      setActiveTab('live');
+    }
+  }, [isLiveMode]);
+
+  // 새 파트 추가 시 자동 스크롤
+  useEffect(() => {
+    if (activeTab === 'live') {
+      livePartsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [monitor.parts.length, activeTab]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -280,7 +301,19 @@ export default function SessionDetailPage() {
         )}
 
         {/* 탭 */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {isLiveMode && (
+            <button
+              onClick={() => setActiveTab('live')}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors relative ${
+                activeTab === 'live'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-white border border-green-300 text-green-700 hover:bg-green-50'
+              }`}
+            >
+              {monitor.connected ? '● ' : '○ '}실시간 모니터링
+            </button>
+          )}
           {(['stories', 'flagged', 'analytics'] as const).map((tab) => (
             <button
               key={tab}
@@ -300,6 +333,168 @@ export default function SessionDetailPage() {
             </button>
           ))}
         </div>
+
+        {/* ─── 실시간 모니터링 탭 ─── */}
+        {activeTab === 'live' && isLiveMode && (
+          <div className="space-y-4">
+            {/* 연결 상태 + 참여자 */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${monitor.connected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span className="text-xs font-bold text-gray-700">
+                    {monitor.connected ? '실시간 연결됨' : '연결 중...'}
+                  </span>
+                </div>
+                <span className="text-xs text-gray-400">
+                  참여자 {monitor.participants.length}명
+                </span>
+              </div>
+
+              {/* 참여자 목록 */}
+              {monitor.participants.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {monitor.participants.map((p) => (
+                    <div key={p.userId} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-1">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                      <span className="text-xs font-medium text-gray-700">{p.name}</span>
+                      {p.online && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 릴레이 턴 정보 */}
+              {session.mode === 'relay' && monitor.currentTurn && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">현재 차례:</span>
+                      <span className="text-sm font-bold text-indigo-600">{monitor.currentTurn.currentStudentName}</span>
+                      {monitor.currentTurn.nextStudentName && (
+                        <span className="text-xs text-gray-400">
+                          (다음: {monitor.currentTurn.nextStudentName})
+                        </span>
+                      )}
+                    </div>
+                    {monitor.timer && (
+                      <div className="flex items-center gap-1">
+                        <span className={`text-sm font-mono font-bold ${
+                          monitor.timer.secondsLeft <= 10 ? 'text-red-500' : 'text-gray-700'
+                        }`}>
+                          {Math.floor(monitor.timer.secondsLeft / 60)}:{(monitor.timer.secondsLeft % 60).toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 분기 투표 정보 */}
+              {session.mode === 'branch' && monitor.voteInfo && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-emerald-600">투표 진행 중</span>
+                    <span className="text-xs text-gray-400">
+                      {monitor.voteInfo.totalVotes}표
+                      {monitor.voteInfo.voteSecondsLeft != null && (
+                        <span className="ml-2 font-mono">{monitor.voteInfo.voteSecondsLeft}초</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {monitor.voteInfo.choices.map((choice, idx) => {
+                      const count = monitor.voteInfo!.voteCounts[idx] || 0;
+                      const total = monitor.voteInfo!.totalVotes || 1;
+                      const pct = Math.round((count / total) * 100);
+                      const isSelected = monitor.voteInfo!.selectedIdx === idx;
+                      return (
+                        <div key={idx} className={`relative rounded-lg overflow-hidden ${isSelected ? 'ring-2 ring-emerald-400' : ''}`}>
+                          <div className="bg-gray-100 rounded-lg">
+                            <div
+                              className={`h-7 rounded-lg ${isSelected ? 'bg-emerald-200' : 'bg-indigo-100'}`}
+                              style={{ width: `${Math.max(pct, 5)}%` }}
+                            />
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-between px-3">
+                            <span className="text-[11px] text-gray-700 truncate flex-1">{choice}</span>
+                            <span className="text-[10px] font-bold text-gray-500 ml-2">{count}표 ({pct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {monitor.voteInfo.selectedText && (
+                    <p className="text-xs text-emerald-600 mt-2 font-bold">
+                      선택됨: {monitor.voteInfo.selectedText}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* AI 작성 중 표시 */}
+            {monitor.aiWriting && (
+              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 flex items-center gap-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-xs font-bold text-purple-600">AI가 이야기를 이어쓰고 있습니다...</span>
+              </div>
+            )}
+
+            {/* 완료 표시 */}
+            {monitor.completed && (
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
+                <p className="text-lg mb-1">🎉</p>
+                <p className="text-sm font-bold text-green-700">이야기가 완성되었습니다!</p>
+              </div>
+            )}
+
+            {/* 실시간 이야기 파트 */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-700">
+                  {session.mode === 'relay' ? '🔗 릴레이 이야기' : '🌿 분기 이야기'}
+                </h3>
+                <span className="text-xs text-gray-400">{monitor.parts.length}개 파트</span>
+              </div>
+
+              <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+                {monitor.parts.length === 0 ? (
+                  <p className="text-center text-gray-400 text-sm py-6">
+                    아직 이야기가 시작되지 않았습니다
+                  </p>
+                ) : (
+                  monitor.parts.map((part, idx) => (
+                    <div
+                      key={part.id || idx}
+                      className={`rounded-xl p-3 transition-all ${
+                        part.authorType === 'ai'
+                          ? 'bg-gray-50 border border-gray-100'
+                          : 'bg-blue-50 border border-blue-100'
+                      } ${idx === monitor.parts.length - 1 ? 'ring-2 ring-indigo-200' : ''}`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-xs font-semibold text-gray-500">
+                          {part.authorType === 'ai' ? '🤖 AI' : '✏️ 학생'}
+                        </span>
+                        {part.authorType === 'student' && part.metadata?.authorName && (
+                          <span className="text-[10px] text-gray-400">({part.metadata.authorName})</span>
+                        )}
+                        <span className="text-[10px] text-gray-300 ml-auto">#{part.order}</span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{part.text}</p>
+                    </div>
+                  ))
+                )}
+                <div ref={livePartsEndRef} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── 이야기 목록 탭 ─── */}
         {activeTab === 'stories' && (
