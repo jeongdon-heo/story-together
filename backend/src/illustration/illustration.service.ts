@@ -183,12 +183,12 @@ export class IllustrationService {
       // 3. 이미지 생성 (여러 모델 시도)
       let imageUrl = '';
 
-      // 옵션 1: gemini-2.0-flash-exp with responseModalities IMAGE
+      // 옵션 1: gemini-2.5-flash-image
       if (this.genai && !imageUrl) {
         try {
-          this.logger.log('이미지 생성 시도: gemini-2.0-flash-exp (responseModalities IMAGE)');
+          this.logger.log('이미지 생성 시도: gemini-2.5-flash-image');
           const response = await this.genai.models.generateContent({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.5-flash-image',
             contents: finalPrompt,
             config: {
               responseModalities: ['IMAGE', 'TEXT'],
@@ -200,28 +200,28 @@ export class IllustrationService {
             for (const part of candidates[0].content.parts) {
               if (part.inlineData?.data) {
                 imageUrl = await this.saveBase64Image(jobId, part.inlineData.data);
-                this.logger.log('gemini-2.0-flash-exp 이미지 생성 성공');
+                this.logger.log('gemini-2.5-flash-image 이미지 생성 성공');
                 break;
               }
             }
             if (!imageUrl) {
               const partTypes = candidates[0].content.parts.map((p: any) => p.text ? 'text' : p.inlineData ? 'inlineData' : 'unknown');
-              this.logger.warn(`gemini-2.0-flash-exp: 이미지 없음, parts: [${partTypes.join(',')}]`);
+              this.logger.warn(`gemini-2.5-flash-image: 이미지 없음, parts: [${partTypes.join(',')}]`);
             }
           } else {
-            this.logger.warn(`gemini-2.0-flash-exp: candidates 구조 없음 — ${JSON.stringify(response).substring(0, 300)}`);
+            this.logger.warn(`gemini-2.5-flash-image: candidates 구조 없음 — ${JSON.stringify(response).substring(0, 300)}`);
           }
         } catch (err0: any) {
-          this.logger.warn(`gemini-2.0-flash-exp 실패: ${err0.message}`);
+          this.logger.warn(`gemini-2.5-flash-image 실패: ${err0.message}`);
         }
       }
 
-      // 옵션 2: gemini-2.5-flash-preview with responseModalities IMAGE
+      // 옵션 2: gemini-3.1-flash-image-preview
       if (this.genai && !imageUrl) {
         try {
-          this.logger.log('이미지 생성 시도: gemini-2.5-flash-preview');
+          this.logger.log('이미지 생성 시도: gemini-3.1-flash-image-preview');
           const response = await this.genai.models.generateContent({
-            model: 'gemini-2.5-flash-preview-04-17',
+            model: 'gemini-3.1-flash-image-preview',
             contents: finalPrompt,
             config: {
               responseModalities: ['IMAGE', 'TEXT'],
@@ -233,25 +233,25 @@ export class IllustrationService {
             for (const part of candidates[0].content.parts) {
               if (part.inlineData?.data) {
                 imageUrl = await this.saveBase64Image(jobId, part.inlineData.data);
-                this.logger.log('gemini-2.5-flash-preview 이미지 생성 성공');
+                this.logger.log('gemini-3.1-flash-image-preview 이미지 생성 성공');
                 break;
               }
             }
             if (!imageUrl) {
-              this.logger.warn('gemini-2.5-flash-preview: 이미지 없음 (텍스트만 반환됨)');
+              this.logger.warn('gemini-3.1-flash-image-preview: 이미지 없음 (텍스트만 반환됨)');
             }
           }
         } catch (err1: any) {
-          this.logger.warn(`gemini-2.5-flash-preview 실패: ${err1.message}`);
+          this.logger.warn(`gemini-3.1-flash-image-preview 실패: ${err1.message}`);
         }
       }
 
-      // 옵션 3: Imagen 3 (SDK generateImages 메서드)
+      // 옵션 3: Imagen 4 Fast (SDK generateImages 메서드)
       if (this.genai && !imageUrl) {
         try {
-          this.logger.log('이미지 생성 시도: imagen-3.0-generate-002');
+          this.logger.log('이미지 생성 시도: imagen-4.0-fast-generate-001');
           const response = await this.genai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
+            model: 'imagen-4.0-fast-generate-001',
             prompt: finalPrompt,
             config: { numberOfImages: 1, includeRaiReason: true },
           });
@@ -259,13 +259,13 @@ export class IllustrationService {
           const generated = (response as any).generatedImages;
           if (generated?.[0]?.image?.imageBytes) {
             imageUrl = await this.saveBase64Image(jobId, generated[0].image.imageBytes);
-            this.logger.log('imagen-3.0 이미지 생성 성공');
+            this.logger.log('imagen-4.0-fast 이미지 생성 성공');
           } else {
             const reason = generated?.[0]?.raiFilteredReason;
-            this.logger.warn(`imagen-3.0: 이미지 없음${reason ? ` (RAI: ${reason})` : ''}`);
+            this.logger.warn(`imagen-4.0-fast: 이미지 없음${reason ? ` (RAI: ${reason})` : ''}`);
           }
         } catch (err2: any) {
-          this.logger.warn(`imagen-3.0 실패: ${err2.message}`);
+          this.logger.warn(`imagen-4.0-fast 실패: ${err2.message}`);
         }
       }
 
