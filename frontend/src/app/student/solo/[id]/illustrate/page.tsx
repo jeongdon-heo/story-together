@@ -258,18 +258,17 @@ export default function IllustratePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-gray-700">🖼️ 이야기 장면 삽화</h2>
-            {scenes.length === 0 && (
+            {scenes.length === 0 && !analyzingScenes && (
               <button
                 onClick={handleAnalyzeScenes}
-                disabled={analyzingScenes}
-                className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 transition-colors"
               >
-                {analyzingScenes ? '분석 중...' : '장면 분석하기'}
+                {sceneIllustrations.length > 0 ? '새 장면 분석하기' : '장면 분석하기'}
               </button>
             )}
           </div>
 
-          {scenes.length === 0 && !analyzingScenes && (
+          {scenes.length === 0 && !analyzingScenes && sceneIllustrations.length === 0 && (
             <div className="text-center py-6 text-gray-400">
               <p className="text-3xl mb-2">🔍</p>
               <p className="text-sm">이야기에서 삽화를 넣을 장면을 분석해보세요</p>
@@ -280,6 +279,59 @@ export default function IllustratePage() {
             <div className="flex flex-col items-center py-6 text-gray-400">
               <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-sm">이야기를 읽고 장면을 찾고 있어요...</p>
+            </div>
+          )}
+
+          {/* 이미 생성된 삽화가 있지만 장면 분석이 안 된 경우 (페이지 재방문) */}
+          {scenes.length === 0 && !analyzingScenes && sceneIllustrations.length > 0 && (
+            <div className="space-y-4">
+              {sceneIllustrations
+                .sort((a, b) => a.sceneIndex - b.sceneIndex)
+                .map((illust) => (
+                  <div
+                    key={illust.id}
+                    className="border border-gray-100 rounded-xl p-4 bg-gray-50"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg shrink-0">
+                        장면 {illust.sceneIndex + 1}
+                      </span>
+                      {illust.sceneText && (
+                        <p className="text-sm text-gray-700 leading-relaxed flex-1">{illust.sceneText}</p>
+                      )}
+                    </div>
+                    {illust.imageUrl ? (
+                      <div className="relative group">
+                        <img
+                          src={toBackendURL(illust.imageUrl)}
+                          alt={illust.sceneText || `장면 ${illust.sceneIndex + 1}`}
+                          className="w-full rounded-xl object-cover aspect-video"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleRegenerate(illust.id, illust.sceneIndex)}
+                            className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg"
+                          >
+                            🔄 다시 그리기
+                          </button>
+                          <button
+                            onClick={() => handleDelete(illust.id)}
+                            className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                        <span className="absolute bottom-2 right-2 text-[10px] bg-black/50 text-white px-2 py-0.5 rounded-full">
+                          {STYLE_LABELS[illust.style as IllustrationStyle]?.label || illust.style}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                        <p className="text-xs text-indigo-500 font-semibold">이미지 생성은 준비 중입니다</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
           )}
 
