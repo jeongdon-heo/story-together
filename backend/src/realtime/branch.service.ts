@@ -83,6 +83,21 @@ export class BranchService {
   async startBranch(storyId: string, sessionId: string) {
     if (this.states.has(storyId)) return;
 
+    // 즉시 placeholder 상태를 설정하여 중복 호출 방지
+    this.states.set(storyId, {
+      storyId,
+      sessionId,
+      participants: [],
+      phase: 'voting',
+      currentNodeId: null,
+      voteTimer: null,
+      voteSecondsLeft: VOTE_SECONDS,
+      votes: new Map(),
+      writerQueue: [],
+      currentWriterIdx: 0,
+      partsAfterBranch: 0,
+    });
+
     const story = await this.prisma.story.findUniqueOrThrow({
       where: { id: storyId },
       include: {

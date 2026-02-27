@@ -84,6 +84,18 @@ export class RelayService {
       return;
     }
 
+    // 즉시 placeholder 상태를 설정하여 중복 호출 방지
+    this.states.set(storyId, {
+      sessionId,
+      storyId,
+      participants: [],
+      currentIdx: 0,
+      timer: null,
+      secondsLeft: 0,
+      totalSeconds: 0,
+      isRunning: false,
+    });
+
     const story = await this.prisma.story.findUniqueOrThrow({
       where: { id: storyId },
       include: {
