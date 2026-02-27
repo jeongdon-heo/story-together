@@ -269,6 +269,14 @@ export class StoryService {
       data: { status: 'completed', completedAt: new Date() },
     });
 
+    // solo 모드: 이야기 완료 시 세션도 자동 완료
+    if (story.session?.mode === 'solo') {
+      await this.prisma.session.update({
+        where: { id: story.sessionId },
+        data: { status: 'completed', completedAt: new Date() },
+      }).catch(() => {});
+    }
+
     // 활동 스티커 자동 부여 (비동기, 실패해도 무시)
     if (story.userId) {
       this.stickerService.checkAndAutoAward(story.userId, storyId).catch(() => {});
