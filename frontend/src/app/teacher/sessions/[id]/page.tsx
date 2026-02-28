@@ -529,7 +529,7 @@ export default function SessionDetailPage() {
               </div>
 
               {/* 교사용 마무리 버튼 */}
-              {!monitor.completed && monitor.parts.length >= 6 && (
+              {!monitor.completed && monitor.parts.length >= 2 && (
                 <div className="p-4 bg-white/80 border-t border-gray-100 text-center">
                   <button
                     onClick={() => {

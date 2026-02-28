@@ -178,6 +178,7 @@ export default function RelayPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [relayStarted, setRelayStarted] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false); // 제출 후 차례 넘어갈 때까지 입력 차단
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -269,11 +270,17 @@ export default function RelayPage() {
     }
   }, [contentRejected]);
 
-  const isMyTurn = currentTurn?.currentStudentId === userId;
+  // 차례가 바뀌면 hasSubmitted 초기화
+  useEffect(() => {
+    setHasSubmitted(false);
+  }, [currentTurn?.currentStudentId]);
+
+  const isMyTurn = currentTurn?.currentStudentId === userId && !hasSubmitted;
 
   const handleSubmit = async () => {
     if (!inputText.trim() || submitting || !isMyTurn) return;
     setSubmitting(true);
+    setHasSubmitted(true); // 즉시 입력 차단
     submitPart(inputText.trim());
     setInputText('');
     setShowHints(false);
@@ -539,9 +546,11 @@ export default function RelayPage() {
           ) : (
             <div className="text-center py-4">
               <p className="text-base font-semibold text-indigo-600">
-                {currentTurn
-                  ? `${currentTurn.currentStudentName}님이 글을 입력할 차례입니다.`
-                  : '친구들이 입장하면 시작돼요!'}
+                {hasSubmitted
+                  ? '글 제출 완료! AI가 이어서 쓰고 있어요...'
+                  : currentTurn
+                    ? `${currentTurn.currentStudentName}님이 글을 입력할 차례입니다.`
+                    : '친구들이 입장하면 시작돼요!'}
               </p>
               <p className="text-sm text-gray-400 mt-2">
                 이모지로 응원해 주세요! 👆
@@ -549,8 +558,8 @@ export default function RelayPage() {
             </div>
           )}
 
-          {/* 끝내기 버튼 */}
-          {storyParts.length >= 6 && (
+          {/* 끝내기 버튼 — 파트가 2개 이상이면 누구나 누를 수 있음 */}
+          {storyParts.length >= 2 && (
             <div className="mt-3 text-center">
               <button
                 onClick={() => {

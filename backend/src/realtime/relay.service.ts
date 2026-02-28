@@ -14,6 +14,7 @@ interface RelayState {
   secondsLeft: number;
   totalSeconds: number;
   isRunning: boolean;
+  isWriting: boolean;                // 글 제출 처리 중 (이중 제출 방지)
 }
 
 interface RelayParticipant {
@@ -128,6 +129,7 @@ export class RelayService {
       secondsLeft: seconds,
       totalSeconds: seconds,
       isRunning: true,
+      isWriting: false,
     };
 
     this.states.set(storyId, state);
@@ -142,7 +144,11 @@ export class RelayService {
     if (!state || !state.isRunning) return null;
 
     const current = state.participants[state.currentIdx];
-    if (current.userId !== userId) return null;
+    if (!current || current.userId !== userId) return null;
+
+    // 이중 제출 방지
+    if (state.isWriting) return null;
+    state.isWriting = true;
 
     // 타이머 중지
     this.stopTimer(storyId);
@@ -171,6 +177,7 @@ export class RelayService {
           });
       }
       // 타이머 재개
+      state.isWriting = false;
       this.startTimer(storyId);
       return null;
     }
@@ -205,7 +212,10 @@ export class RelayService {
       },
     });
 
-    // AI 이어쓰기
+    // 즉시 다음 차례로 넘기기 (학생이 중복 제출 못하도록)
+    this.advanceTurn(storyId);
+
+    // AI 이어쓰기 (비동기 — 차례는 이미 넘어감)
     this.server.to(room).emit('relay:ai_writing', { storyId });
 
     const previousParts = [
@@ -218,38 +228,48 @@ export class RelayService {
       { role: 'user' as const, content: text },
     ];
 
-    const aiText = await this.aiService.continueStory(
-      previousParts,
-      grade,
-      story.aiCharacter || 'grandmother',
-    );
+    try {
+      const aiText = await this.aiService.continueStory(
+        previousParts,
+        grade,
+        story.aiCharacter || 'grandmother',
+      );
 
-    const aiPart = await this.prisma.storyPart.create({
-      data: {
+      const aiPart = await this.prisma.storyPart.create({
+        data: {
+          storyId,
+          authorType: 'ai',
+          text: aiText,
+          order: nextOrder + 1,
+          metadata: { mood: 'adventure' },
+        },
+      });
+
+      this.server.to(room).emit('relay:ai_complete', {
         storyId,
-        authorType: 'ai',
-        text: aiText,
-        order: nextOrder + 1,
-        metadata: { mood: 'adventure' },
-      },
-    });
+        newPart: {
+          id: aiPart.id,
+          authorType: 'ai',
+          text: aiText,
+          order: nextOrder + 1,
+          metadata: aiPart.metadata,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`AI 이어쓰기 실패: ${err}`);
+      this.server.to(room).emit('relay:ai_complete', {
+        storyId,
+        newPart: {
+          id: `error-${Date.now()}`,
+          authorType: 'ai',
+          text: '(AI가 잠시 쉬고 있어요. 다음 친구가 이어서 써 주세요!)',
+          order: nextOrder + 1,
+        },
+      });
+    }
 
-    this.server.to(room).emit('relay:ai_complete', {
-      storyId,
-      newPart: {
-        id: aiPart.id,
-        authorType: 'ai',
-        text: aiText,
-        order: nextOrder + 1,
-        metadata: aiPart.metadata,
-      },
-    });
-
-
-
-    // 다음 차례
-    this.advanceTurn(storyId);
-    return { studentPart, aiPart };
+    state.isWriting = false;
+    return { studentPart };
   }
 
   // ─── 패스 ──────────────────────────────────────────────
