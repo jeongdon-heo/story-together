@@ -213,7 +213,7 @@ export default function RelayPage() {
 
   // 세션의 이야기 로드 (이미 시작된 릴레이가 있으면 바로 합류)
   useEffect(() => {
-    if (!sessionId || !token) return;
+    if (!sessionId || !token || relayStarted) return;
 
     const pollStory = () => {
       relayApi
@@ -235,11 +235,19 @@ export default function RelayPage() {
     pollStory();
 
     // 대기 화면에서 다른 학생이 시작할 수 있으므로 3초마다 폴링
-    const interval = setInterval(() => {
-      if (!relayStarted) pollStory();
-    }, 3000);
+    const interval = setInterval(pollStory, 3000);
     return () => clearInterval(interval);
   }, [sessionId, token, relayStarted]);
+
+  // 안전장치: 메인 화면인데 파트가 비어있으면 API에서 다시 로드
+  useEffect(() => {
+    if (!storyId || !relayStarted || storyParts.length > 0) return;
+    relayApi.getStory(storyId).then((res) => {
+      if (res.data?.parts?.length > 0) {
+        setStoryParts(res.data.parts as any);
+      }
+    }).catch(() => {});
+  }, [storyId, relayStarted, storyParts.length]);
 
   // 새 이야기 시작
   const handleStartRelay = async () => {
