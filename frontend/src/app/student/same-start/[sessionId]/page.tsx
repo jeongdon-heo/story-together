@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { sameStartApi } from '../../../../lib/same-start-api';
 import { storyApi } from '../../../../lib/story-api';
+import { publishApi } from '../../../../lib/publish-api';
 import type { Story, StoryPart, Hint } from '../../../../types/story';
 
 export default function SameStartStoryPage() {
@@ -22,6 +23,8 @@ export default function SameStartStoryPage() {
   const [showHints, setShowHints] = useState(false);
   const [error, setError] = useState('');
   const [completing, setCompleting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishDone, setPublishDone] = useState(false);
   const [myGroup, setMyGroup] = useState<{ groupNumber: number; groupName: string } | null>(null);
   const [joiningGroup, setJoiningGroup] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -417,6 +420,25 @@ export default function SameStartStoryPage() {
         <footer className="bg-white border-t border-gray-200 p-4">
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-sm text-gray-500 mb-3">이야기가 완성되었어요! 🎉</p>
+            <button
+              onClick={async () => {
+                if (publishDone || publishing || !story) return;
+                setPublishing(true);
+                try {
+                  await publishApi.publish({ storyId: story.id, scope: 'class' });
+                  setPublishDone(true);
+                } catch {}
+                setPublishing(false);
+              }}
+              disabled={publishing || publishDone}
+              className={`w-full py-3 rounded-xl font-bold text-sm mb-3 transition-colors ${
+                publishDone
+                  ? 'bg-green-100 text-green-600'
+                  : 'bg-white border-2 border-amber-300 text-amber-600 hover:bg-amber-50'
+              }`}
+            >
+              {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
+            </button>
             <button
               onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
               className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600"
