@@ -537,13 +537,13 @@ export default function RelayPage() {
               </div>
             </>
           ) : (
-            <div className="text-center py-3">
-              <p className="text-sm text-gray-500">
+            <div className="text-center py-4">
+              <p className="text-base font-semibold text-indigo-600">
                 {currentTurn
-                  ? `${currentTurn.currentStudentName}이(가) 쓰고 있어요...`
-                  : '잠시 기다려 주세요'}
+                  ? `${currentTurn.currentStudentName}님이 글을 입력할 차례입니다.`
+                  : '친구들이 입장하면 시작돼요!'}
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-sm text-gray-400 mt-2">
                 이모지로 응원해 주세요! 👆
               </p>
             </div>
@@ -551,14 +551,14 @@ export default function RelayPage() {
 
           {/* 끝내기 버튼 */}
           {storyParts.length >= 6 && (
-            <div className="mt-2 text-center">
+            <div className="mt-3 text-center">
               <button
                 onClick={() => {
                   if (window.confirm('이야기를 마무리할까요? AI가 결말을 써 줄 거예요.')) {
                     finishStory();
                   }
                 }}
-                className="text-xs text-gray-400 underline"
+                className="px-6 py-3 bg-rose-500 text-white text-base font-bold rounded-xl shadow-md hover:bg-rose-600 transition-all animate-pulse"
               >
                 이야기 마무리하기
               </button>

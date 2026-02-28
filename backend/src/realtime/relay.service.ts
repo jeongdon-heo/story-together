@@ -89,51 +89,13 @@ export class RelayService {
       return;
     }
 
-    // 즉시 placeholder 상태를 설정하여 중복 호출 방지
-    this.states.set(storyId, {
-      sessionId,
-      storyId,
-      participants: [],
-      currentIdx: 0,
-      timer: null,
-      secondsLeft: 0,
-      totalSeconds: 0,
-      isRunning: false,
-    });
-
-    const story = await this.prisma.story.findUniqueOrThrow({
-      where: { id: storyId },
-      include: {
-        session: {
-          include: {
-            classRoom: {
-              include: {
-                members: {
-                  include: { user: true },
-                  orderBy: { orderIndex: 'asc' },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const members = story.session.classRoom?.members ?? [];
-    const participants: RelayParticipant[] = members.map((m) => ({
-      userId: m.userId,
-      name: m.displayName || m.user.name,
-      color: m.color || '#6366f1',
-      socketId: '',
-      online: false,
-    }));
-
     const seconds = turnSeconds ?? this.DEFAULT_TURN_SECONDS;
 
+    // 참여자를 빈 목록으로 시작 → joinSession으로 입장 순서대로 추가됨
     const state: RelayState = {
       sessionId,
       storyId,
-      participants,
+      participants: [],
       currentIdx: 0,
       timer: null,
       secondsLeft: seconds,
@@ -142,8 +104,7 @@ export class RelayService {
     };
 
     this.states.set(storyId, state);
-    this.broadcastTurnChanged(storyId, state);
-    this.startTimer(storyId);
+    // 타이머·차례 방송은 첫 참여자 입장 시 ensureOnlineTurn에서 시작
   }
 
   // ─── 글 제출 ───────────────────────────────────────────
@@ -415,7 +376,10 @@ export class RelayService {
     state: RelayState,
     prevIdx?: number,
   ) {
+    if (state.participants.length === 0) return;
+
     const current = state.participants[state.currentIdx];
+    if (!current) return;
     const nextIdx = (state.currentIdx + 1) % state.participants.length;
     const next = state.participants[nextIdx];
 
@@ -501,18 +465,33 @@ export class RelayService {
   }
 
   /**
-   * 현재 차례가 오프라인 참여자이면 즉시 온라인 참여자에게 차례를 넘긴다.
+   * 현재 차례가 오프라인이거나 타이머가 아직 시작되지 않았으면
+   * 온라인 참여자에게 차례를 배정/시작한다.
    */
   private ensureOnlineTurn(storyId: string) {
     const state = this.states.get(storyId);
     if (!state || !state.isRunning) return;
     if (state.participants.length === 0) return;
 
-    const current = state.participants[state.currentIdx];
-    if (current?.online) return; // 현재 차례가 온라인이면 OK
+    // currentIdx가 범위를 벗어나면 0으로 리셋
+    if (state.currentIdx >= state.participants.length) {
+      state.currentIdx = 0;
+    }
 
-    // 현재 인덱스 포함하여 온라인 참여자 탐색 (자기 자신도 체크)
-    // findNextOnlineIdx는 startIdx+1부터 탐색하므로 startIdx-1을 전달
+    const current = state.participants[state.currentIdx];
+
+    // 현재 차례가 온라인이면
+    if (current?.online) {
+      if (!state.timer) {
+        // 타이머 미시작 → 시작 (첫 참여자 입장 시)
+        this.broadcastTurnChanged(storyId, state);
+        this.startTimer(storyId);
+        this.logger.log(`릴레이 시작: ${current.name} 차례`);
+      }
+      return;
+    }
+
+    // 현재 차례가 오프라인 → 다음 온라인 참여자 찾기
     const searchFrom = (state.currentIdx - 1 + state.participants.length) % state.participants.length;
     const onlineIdx = this.findNextOnlineIdx(state, searchFrom);
     if (onlineIdx < 0) return; // 온라인 참여자 없음, 대기

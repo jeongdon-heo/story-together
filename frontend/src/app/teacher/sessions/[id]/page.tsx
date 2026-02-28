@@ -18,6 +18,7 @@ import {
 } from '../../../../lib/teacher-api';
 import { getSessionAnalytics, type SessionAnalytics } from '../../../../lib/analytics-api';
 import { useTeacherMonitor } from '../../../../hooks/useTeacherMonitor';
+import { getSocket } from '../../../../lib/socket';
 
 const MODE_EMOJI: Record<string, string> = {
   solo: '✍️', relay: '🔗', same_start: '🌟', branch: '🌿',
@@ -334,10 +335,10 @@ export default function SessionDetailPage() {
           ))}
         </div>
 
-        {/* ─── 실시간 모니터링 탭 ─── */}
+        {/* ─── 실시간 모니터링 탭 (학생과 동일한 채팅 스타일) ─── */}
         {activeTab === 'live' && isLiveMode && (
           <div className="space-y-4">
-            {/* 연결 상태 + 참여자 */}
+            {/* 연결 상태 + 참여자 + 타이머 (학생 헤더와 유사) */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -347,46 +348,71 @@ export default function SessionDetailPage() {
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
-                  참여자 {monitor.participants.length}명
+                  참여자 {monitor.participants.filter(p => p.online).length}/{monitor.participants.length}명
                 </span>
               </div>
 
-              {/* 참여자 목록 */}
-              {monitor.participants.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {monitor.participants.map((p) => (
-                    <div key={p.userId} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-1">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                      <span className="text-xs font-medium text-gray-700">{p.name}</span>
-                      {p.online && <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />}
+              {/* 릴레이 턴 + 타이머 바 (학생 화면과 동일) */}
+              {session.mode === 'relay' && monitor.currentTurn && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-bold text-indigo-600">
+                      ✏️ {monitor.currentTurn.currentStudentName}님 차례
+                    </span>
+                    {monitor.timer && (
+                      <span className={`text-sm font-mono font-bold tabular-nums ${
+                        monitor.timer.secondsLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-gray-600'
+                      }`}>
+                        {monitor.timer.secondsLeft}초
+                      </span>
+                    )}
+                  </div>
+                  {monitor.timer && (
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                      <div
+                        className={`h-3 rounded-full transition-all duration-1000 ${
+                          monitor.timer.totalSeconds > 0 && (monitor.timer.secondsLeft / monitor.timer.totalSeconds) * 100 > 50
+                            ? 'bg-emerald-400'
+                            : (monitor.timer.secondsLeft / monitor.timer.totalSeconds) * 100 > 20
+                              ? 'bg-amber-400'
+                              : 'bg-red-500 animate-pulse'
+                        }`}
+                        style={{ width: `${monitor.timer.totalSeconds > 0 ? (monitor.timer.secondsLeft / monitor.timer.totalSeconds) * 100 : 0}%` }}
+                      />
                     </div>
-                  ))}
+                  )}
+                  {monitor.currentTurn.nextStudentName && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      다음 차례: {monitor.currentTurn.nextStudentName}
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* 릴레이 턴 정보 */}
-              {session.mode === 'relay' && monitor.currentTurn && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">현재 차례:</span>
-                      <span className="text-sm font-bold text-indigo-600">{monitor.currentTurn.currentStudentName}</span>
-                      {monitor.currentTurn.nextStudentName && (
-                        <span className="text-xs text-gray-400">
-                          (다음: {monitor.currentTurn.nextStudentName})
-                        </span>
-                      )}
+              {/* 참여자 목록 (학생 화면과 동일한 스타일) */}
+              {monitor.participants.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {monitor.participants.map((p) => (
+                    <div
+                      key={p.userId}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        monitor.currentTurn?.currentStudentId === p.userId
+                          ? 'ring-2 ring-offset-1 scale-105'
+                          : 'opacity-60'
+                      } ${!p.online ? 'grayscale' : ''}`}
+                      style={{
+                        backgroundColor: `${p.color}20`,
+                        color: p.color,
+                      }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: p.online ? p.color : '#9ca3af' }}
+                      />
+                      {p.name}
+                      {monitor.currentTurn?.currentStudentId === p.userId && ' ✏️'}
                     </div>
-                    {monitor.timer && (
-                      <div className="flex items-center gap-1">
-                        <span className={`text-sm font-mono font-bold ${
-                          monitor.timer.secondsLeft <= 10 ? 'text-red-500' : 'text-gray-700'
-                        }`}>
-                          {Math.floor(monitor.timer.secondsLeft / 60)}:{(monitor.timer.secondsLeft % 60).toString().padStart(2, '0')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
               )}
 
@@ -433,66 +459,106 @@ export default function SessionDetailPage() {
               )}
             </div>
 
-            {/* AI 작성 중 표시 */}
-            {monitor.aiWriting && (
-              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 flex items-center gap-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-                <span className="text-xs font-bold text-purple-600">AI가 이야기를 이어쓰고 있습니다...</span>
-              </div>
-            )}
-
-            {/* 완료 표시 */}
-            {monitor.completed && (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
-                <p className="text-lg mb-1">🎉</p>
-                <p className="text-sm font-bold text-green-700">이야기가 완성되었습니다!</p>
-              </div>
-            )}
-
-            {/* 실시간 이야기 파트 */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+            {/* 실시간 이야기 (학생과 동일한 채팅 말풍선 스타일) */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-4 bg-white/80 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-700">
                   {session.mode === 'relay' ? '🔗 릴레이 이야기' : '🌿 분기 이야기'}
                 </h3>
                 <span className="text-xs text-gray-400">{monitor.parts.length}개 파트</span>
               </div>
 
-              <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+              <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
                 {monitor.parts.length === 0 ? (
                   <p className="text-center text-gray-400 text-sm py-6">
                     아직 이야기가 시작되지 않았습니다
                   </p>
                 ) : (
-                  monitor.parts.map((part, idx) => (
-                    <div
-                      key={part.id || idx}
-                      className={`rounded-xl p-3 transition-all ${
-                        part.authorType === 'ai'
-                          ? 'bg-gray-50 border border-gray-100'
-                          : 'bg-blue-50 border border-blue-100'
-                      } ${idx === monitor.parts.length - 1 ? 'ring-2 ring-indigo-200' : ''}`}
-                    >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-xs font-semibold text-gray-500">
-                          {part.authorType === 'ai' ? '🤖 AI' : '✏️ 학생'}
-                        </span>
-                        {part.authorType === 'student' && part.metadata?.authorName && (
-                          <span className="text-[10px] text-gray-400">({part.metadata.authorName})</span>
-                        )}
-                        <span className="text-[10px] text-gray-300 ml-auto">#{part.order}</span>
+                  monitor.parts.map((part, idx) => {
+                    const isAi = part.authorType === 'ai';
+                    return (
+                      <div
+                        key={part.id || idx}
+                        className={`flex gap-3 ${isAi ? 'flex-row' : 'flex-row-reverse'}`}
+                      >
+                        {/* 아바타 */}
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${
+                            isAi ? 'bg-indigo-100 text-indigo-600' : 'text-white'
+                          }`}
+                          style={!isAi ? { backgroundColor: part.metadata?.authorColor || '#6366f1' } : {}}
+                        >
+                          {isAi ? '🤖' : (part.metadata?.authorName?.[0] || '?')}
+                        </div>
+                        <div className={`max-w-[75%] flex flex-col ${isAi ? '' : 'items-end'}`}>
+                          <p className={`text-xs text-gray-500 mb-1 ${isAi ? '' : 'text-right'}`}>
+                            {isAi ? 'AI 친구' : (part.metadata?.authorName || '학생')}
+                          </p>
+                          <div
+                            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                              isAi
+                                ? 'bg-white border border-gray-200 rounded-tl-sm'
+                                : 'bg-indigo-500 text-white rounded-tr-sm'
+                            } ${idx === monitor.parts.length - 1 ? 'ring-2 ring-indigo-300' : ''}`}
+                          >
+                            {part.text}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-700 leading-relaxed">{part.text}</p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
+
+                {/* AI 작성 중 */}
+                {monitor.aiWriting && (
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">
+                      🤖
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
+                      <div className="flex gap-1.5 items-center h-5">
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div ref={livePartsEndRef} />
               </div>
+
+              {/* 교사용 마무리 버튼 */}
+              {!monitor.completed && monitor.parts.length >= 6 && (
+                <div className="p-4 bg-white/80 border-t border-gray-100 text-center">
+                  <button
+                    onClick={() => {
+                      if (confirm('이야기를 마무리할까요? AI가 결말을 써줍니다.')) {
+                        const token = localStorage.getItem('accessToken');
+                        if (token && liveStoryId) {
+                          const socket = (window as any).__storySocket || getSocket(token);
+                          socket.emit('relay:finish_story', { storyId: liveStoryId });
+                        }
+                      }
+                    }}
+                    className="px-8 py-3 bg-rose-500 text-white text-base font-bold rounded-xl shadow-md hover:bg-rose-600 transition-all"
+                  >
+                    이야기 마무리하기
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* 완료 표시 */}
+            {monitor.completed && (
+              <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-6 text-center">
+                <p className="text-4xl mb-2">🎉</p>
+                <p className="text-lg font-bold text-green-700">이야기가 완성되었습니다!</p>
+                <p className="text-sm text-green-600 mt-1">
+                  {monitor.participants.length}명이 함께 만든 이야기 ({monitor.parts.length}개 파트)
+                </p>
+              </div>
+            )}
           </div>
         )}
 
