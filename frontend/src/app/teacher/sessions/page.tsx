@@ -86,6 +86,11 @@ export default function SessionsPage() {
 
   const handleCreate = async () => {
     if (!form.mode) return;
+    // 그룹 모드 (solo 외)는 반 필수
+    if (form.mode !== 'solo' && !form.classId) {
+      alert('릴레이, 같은 시작, 갈래 모드는 반을 선택해야 합니다');
+      return;
+    }
     if (form.mode === 'same_start' && !form.introText.trim()) {
       alert('같은 시작 모드는 공통 도입부를 입력해야 합니다');
       return;
@@ -113,6 +118,9 @@ export default function SessionsPage() {
       setShowCreate(false);
       setForm({ classId: '', mode: 'solo', title: '', introText: '', participationType: 'individual', groupCount: 4 });
       router.push(`/teacher/sessions/${sess.id}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || '세션 생성에 실패했습니다';
+      alert(msg);
     } finally {
       setCreating(false);
     }
@@ -311,7 +319,9 @@ export default function SessionsPage() {
 
               {/* 반 선택 */}
               <div>
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">반 (선택)</label>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  반 {form.mode !== 'solo' ? <span className="text-red-500">*</span> : '(선택)'}
+                </label>
                 <select
                   value={form.classId}
                   onChange={(e) => setForm((f) => ({ ...f, classId: e.target.value }))}
