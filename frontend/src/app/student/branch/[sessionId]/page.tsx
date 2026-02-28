@@ -9,7 +9,7 @@ import { storyApi } from '../../../../lib/story-api';
 
 function useCurrentUser() {
   if (typeof window === 'undefined') return { userId: '', userName: '', token: '' };
-  const token = localStorage.getItem('accessToken') || '';
+  const token = sessionStorage.getItem('accessToken') || '';
   try {
     const payload = JSON.parse(atob(token.split('.')[1] || ''));
     return { userId: payload.sub || '', userName: payload.name || '학생', token };

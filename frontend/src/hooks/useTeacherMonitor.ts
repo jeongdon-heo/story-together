@@ -70,7 +70,7 @@ export function useTeacherMonitor({ storyId, enabled }: UseTeacherMonitorOptions
   useEffect(() => {
     if (!enabled || !storyId) return;
 
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (!token) return;
 
     const socket = getSocket(token);

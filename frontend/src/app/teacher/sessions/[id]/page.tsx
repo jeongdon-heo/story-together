@@ -534,7 +534,7 @@ export default function SessionDetailPage() {
                   <button
                     onClick={() => {
                       if (confirm('이야기를 마무리할까요? AI가 결말을 써줍니다.')) {
-                        const token = localStorage.getItem('accessToken');
+                        const token = sessionStorage.getItem('accessToken');
                         if (token && liveStoryId) {
                           const socket = (window as any).__storySocket || getSocket(token);
                           socket.emit('relay:finish_story', { storyId: liveStoryId });

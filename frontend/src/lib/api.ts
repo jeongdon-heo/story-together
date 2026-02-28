@@ -31,7 +31,7 @@ const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/register-teacher', '/auth/guest'
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -91,15 +91,15 @@ api.interceptors.response.use(
 
     const refreshToken =
       typeof window !== 'undefined'
-        ? localStorage.getItem('refreshToken')
+        ? sessionStorage.getItem('refreshToken')
         : null;
 
     if (!refreshToken) {
       isRefreshing = false;
       console.warn('[API] refreshToken 없음 — 로그인 페이지로 이동');
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
         window.location.href = '/auth/login';
       }
       return Promise.reject(error);
@@ -116,9 +116,9 @@ api.interceptors.response.use(
       const newAccessToken = data.data.accessToken;
       const newRefreshToken = data.data.refreshToken;
 
-      localStorage.setItem('accessToken', newAccessToken);
+      sessionStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) {
-        localStorage.setItem('refreshToken', newRefreshToken);
+        sessionStorage.setItem('refreshToken', newRefreshToken);
       }
 
       console.log('[API] 토큰 갱신 성공, 원래 요청 재시도');
@@ -129,8 +129,8 @@ api.interceptors.response.use(
     } catch (refreshError: any) {
       console.error('[API] 토큰 갱신 실패:', refreshError.response?.status, refreshError.message);
       processQueue(refreshError, null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
       if (typeof window !== 'undefined') {
         window.location.href = '/auth/login';
       }

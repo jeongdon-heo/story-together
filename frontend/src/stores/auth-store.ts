@@ -34,8 +34,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await authApi.login(data);
       const { accessToken, refreshToken, user } = res.data;
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      sessionStorage.setItem('accessToken', accessToken);
+      if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken);
       set({ user, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
@@ -48,8 +48,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await authApi.registerTeacher(data);
       const { accessToken, refreshToken, user } = res.data;
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      sessionStorage.setItem('accessToken', accessToken);
+      if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken);
       set({ user, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
@@ -62,8 +62,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const res = await authApi.guest(data);
       const { accessToken, refreshToken, user } = res.data;
-      localStorage.setItem('accessToken', accessToken);
-      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      sessionStorage.setItem('accessToken', accessToken);
+      if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken);
       set({ user, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
@@ -72,16 +72,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setTokensFromOAuth: async (accessToken, refreshToken) => {
-    localStorage.setItem('accessToken', accessToken);
-    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    sessionStorage.setItem('accessToken', accessToken);
+    if (refreshToken) sessionStorage.setItem('refreshToken', refreshToken);
     try {
       const res = await authApi.getMe();
       const user = res.data;
       set({ user, isInitialized: true });
       return user;
     } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
       set({ user: null });
       throw new Error('사용자 정보를 가져올 수 없습니다');
     }
@@ -89,13 +89,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken') || undefined;
+      const refreshToken = sessionStorage.getItem('refreshToken') || undefined;
       await authApi.logout(refreshToken);
     } catch {
       // 로그아웃 API 실패해도 로컬 정리
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
       set({ user: null });
     }
   },
@@ -110,14 +110,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: async () => {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (token) {
       try {
         const res = await authApi.getMe();
         set({ user: res.data, isInitialized: true });
       } catch {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
         set({ user: null, isInitialized: true });
       }
     } else {

@@ -11,7 +11,7 @@ function useCurrentUser() {
   if (typeof window === 'undefined') {
     return { userId: '', userName: '', token: '' };
   }
-  const token = localStorage.getItem('accessToken') || '';
+  const token = sessionStorage.getItem('accessToken') || '';
   // JWT 페이로드 디코딩 (간단)
   try {
     const payload = JSON.parse(atob(token.split('.')[1] || ''));
