@@ -214,6 +214,7 @@ export default function RelayPage() {
     });
 
   // 세션의 이야기 로드 (이미 시작된 릴레이가 있으면 바로 합류)
+  // 핵심: AI가 첫 파트를 생성 중일 수 있으므로, parts가 1개 이상일 때만 합류
   useEffect(() => {
     if (!sessionId || !token || relayStarted) return;
 
@@ -223,10 +224,14 @@ export default function RelayPage() {
         .then((res) => {
           if (res.data && res.data.length > 0) {
             const story = res.data[0];
-            setStoryId(story.id);
-            setStoryParts(story.parts as any);
-            setRelayStarted(true);
-            setLoading(false);
+            // AI가 첫 파트를 아직 생성 중이면 (parts가 비어있으면) 폴링 계속
+            if (story.parts && story.parts.length > 0) {
+              setStoryId(story.id);
+              setStoryParts(story.parts as any);
+              setRelayStarted(true);
+              setLoading(false);
+            }
+            // else: 이야기는 존재하지만 AI가 첫 글을 쓰는 중 → 계속 폴링
           } else {
             setLoading(false);
           }
@@ -236,22 +241,10 @@ export default function RelayPage() {
 
     pollStory();
 
-    // 대기 화면에서 다른 학생이 시작할 수 있으므로 3초마다 폴링
-    const interval = setInterval(pollStory, 3000);
+    // 대기 화면에서 다른 학생이 시작할 수 있으므로 2초마다 폴링
+    const interval = setInterval(pollStory, 2000);
     return () => clearInterval(interval);
   }, [sessionId, token, relayStarted]);
-
-  // 메인 화면 진입 시 API에서 파트 확실히 로드 (모든 학생 공통)
-  const partsLoadedRef = useRef(false);
-  useEffect(() => {
-    if (!storyId || !relayStarted || partsLoadedRef.current) return;
-    partsLoadedRef.current = true;
-    relayApi.getStory(storyId).then((res) => {
-      if (res.data?.parts?.length > 0) {
-        setStoryParts(res.data.parts as any);
-      }
-    }).catch(() => {});
-  }, [storyId, relayStarted]);
 
   // 새 이야기 시작
   const handleStartRelay = async () => {
