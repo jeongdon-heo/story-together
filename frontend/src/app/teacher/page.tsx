@@ -55,7 +55,8 @@ export default function TeacherHome() {
     { href: '/teacher/intros',    emoji: '📝', label: '도입부 관리', desc: '같은 시작 모드', loading: false },
     { href: '/teacher/stickers',         emoji: '🌟', label: '칭찬 스티커', desc: '수여·현황', loading: false },
     { href: '/teacher/export/collection', emoji: '📚', label: '문집 만들기',  desc: '이야기 모음 PDF', loading: false },
-    { href: '/teacher/explore',           emoji: '🌍', label: '이야기 승인',  desc: '공개 신청 검토', loading: false },
+    { href: '/teacher/explore',           emoji: '✅', label: '이야기 승인',  desc: '공개 신청 검토', loading: false },
+    { href: '/student/explore',           emoji: '🌍', label: '이야기 탐색',  desc: '공개된 이야기 보기', loading: false },
   ];
 
   return (
