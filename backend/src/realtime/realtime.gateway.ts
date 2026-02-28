@@ -102,6 +102,22 @@ export class RealtimeGateway
     const room = `story:${data.storyId}`;
     await client.join(room);
 
+    // 릴레이 상태가 없으면 자동 재시작 (배포/재시작 후 복구)
+    if (data.storyId && !this.relayService.getState(data.storyId)) {
+      try {
+        const story = await this.prisma.story.findUnique({
+          where: { id: data.storyId },
+          include: { session: true },
+        });
+        if (story && story.session?.mode === 'relay' && story.status === 'writing') {
+          this.logger.log(`릴레이 상태 자동 복구: ${data.storyId}`);
+          await this.relayService.startRelay(data.storyId, story.sessionId);
+        }
+      } catch (e) {
+        this.logger.warn(`릴레이 자동 복구 실패: ${e}`);
+      }
+    }
+
     // 참여자 색상 (랜덤)
     const colors = [
       '#6366f1', '#ec4899', '#f59e0b', '#10b981',
@@ -146,17 +162,19 @@ export class RealtimeGateway
 
     // 현재 릴레이 상태 전송
     const state = this.relayService.getState(data.storyId);
-    if (state) {
+    if (state && state.participants.length > 0) {
       const current = state.participants[state.currentIdx];
-      const nextIdx = (state.currentIdx + 1) % state.participants.length;
-      const next = state.participants[nextIdx];
-      client.emit('relay:turn_changed', {
-        currentStudentId: current.userId,
-        currentStudentName: current.name,
-        nextStudentId: next.userId,
-        nextStudentName: next.name,
-        turnNumber: state.currentIdx + 1,
-      });
+      if (current) {
+        const nextIdx = (state.currentIdx + 1) % state.participants.length;
+        const next = state.participants[nextIdx];
+        client.emit('relay:turn_changed', {
+          currentStudentId: current.userId,
+          currentStudentName: current.name,
+          nextStudentId: next?.userId || '',
+          nextStudentName: next?.name || '',
+          turnNumber: state.currentIdx + 1,
+        });
+      }
       client.emit('relay:timer_tick', {
         secondsLeft: state.secondsLeft,
         totalSeconds: state.totalSeconds,

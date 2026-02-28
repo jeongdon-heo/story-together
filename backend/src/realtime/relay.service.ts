@@ -89,13 +89,40 @@ export class RelayService {
       return;
     }
 
+    const story = await this.prisma.story.findUniqueOrThrow({
+      where: { id: storyId },
+      include: {
+        session: {
+          include: {
+            classRoom: {
+              include: {
+                members: {
+                  include: { user: true },
+                  orderBy: { orderIndex: 'asc' },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 반 명부 번호 순으로 참여자 목록 생성
+    const members = story.session.classRoom?.members ?? [];
+    const participants: RelayParticipant[] = members.map((m) => ({
+      userId: m.userId,
+      name: m.displayName || m.user.name,
+      color: m.color || '#6366f1',
+      socketId: '',
+      online: false,
+    }));
+
     const seconds = turnSeconds ?? this.DEFAULT_TURN_SECONDS;
 
-    // 참여자를 빈 목록으로 시작 → joinSession으로 입장 순서대로 추가됨
     const state: RelayState = {
       sessionId,
       storyId,
-      participants: [],
+      participants,
       currentIdx: 0,
       timer: null,
       secondsLeft: seconds,
@@ -104,7 +131,8 @@ export class RelayService {
     };
 
     this.states.set(storyId, state);
-    // 타이머·차례 방송은 첫 참여자 입장 시 ensureOnlineTurn에서 시작
+    this.logger.log(`릴레이 상태 생성: ${storyId}, 참여자 ${participants.length}명`);
+    // 타이머는 첫 온라인 참여자 입장 시 ensureOnlineTurn에서 시작
   }
 
   // ─── 글 제출 ───────────────────────────────────────────
