@@ -13,7 +13,6 @@ import { sameStartApi, type SavedIntro } from '../../../lib/same-start-api';
 import type { ClassRoom } from '../../../types/class';
 
 const MODE_OPTIONS = [
-  { value: 'solo',       emoji: '✍️', label: '1:1 자유' },
   { value: 'relay',      emoji: '🔗', label: '릴레이' },
   { value: 'same_start', emoji: '🌟', label: '같은 시작' },
   { value: 'branch',     emoji: '🌿', label: '이야기 갈래' },

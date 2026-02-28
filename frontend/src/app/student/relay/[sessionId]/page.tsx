@@ -239,15 +239,17 @@ export default function RelayPage() {
     return () => clearInterval(interval);
   }, [sessionId, token, relayStarted]);
 
-  // 안전장치: 메인 화면인데 파트가 비어있으면 API에서 다시 로드
+  // 메인 화면 진입 시 API에서 파트 확실히 로드 (모든 학생 공통)
+  const partsLoadedRef = useRef(false);
   useEffect(() => {
-    if (!storyId || !relayStarted || storyParts.length > 0) return;
+    if (!storyId || !relayStarted || partsLoadedRef.current) return;
+    partsLoadedRef.current = true;
     relayApi.getStory(storyId).then((res) => {
       if (res.data?.parts?.length > 0) {
         setStoryParts(res.data.parts as any);
       }
     }).catch(() => {});
-  }, [storyId, relayStarted, storyParts.length]);
+  }, [storyId, relayStarted]);
 
   // 새 이야기 시작
   const handleStartRelay = async () => {

@@ -178,11 +178,16 @@ export default function SessionDetailPage() {
       else if (action === 'resume') await resumeSession(sessionId);
       else {
         await completeSession(sessionId);
-        // 학생들에게 세션 종료 알림 (WebSocket)
+        // 학생들에게 세션 종료 알림 + AI 이야기 마무리 자동 트리거
         const token = sessionStorage.getItem('accessToken');
         if (token) {
           const sock = getSocket(token);
           sock.emit('session:end_notify', { sessionId });
+          // 릴레이/분기 이야기가 있으면 AI가 자동으로 마무리
+          if (liveStoryId && (session?.mode === 'relay' || session?.mode === 'branch')) {
+            const finishEvent = session?.mode === 'relay' ? 'relay:finish_story' : 'branch:finish_story';
+            sock.emit(finishEvent, { storyId: liveStoryId });
+          }
         }
       }
       await fetchData();
