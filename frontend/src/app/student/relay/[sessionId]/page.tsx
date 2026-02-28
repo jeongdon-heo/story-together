@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useRelaySocket } from '../../../../hooks/useRelaySocket';
 import { useRelayStore } from '../../../../stores/relay';
 import { relayApi } from '../../../../lib/relay-api';
+import { publishApi } from '../../../../lib/publish-api';
 
 // 임시 사용자 정보 (실제로는 auth store에서 가져옴)
 function useCurrentUser() {
@@ -179,6 +180,8 @@ export default function RelayPage() {
   const [showHints, setShowHints] = useState(false);
   const [relayStarted, setRelayStarted] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false); // 제출 후 차례 넘어갈 때까지 입력 차단
+  const [publishing, setPublishing] = useState(false);
+  const [publishDone, setPublishDone] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -322,6 +325,25 @@ export default function RelayPage() {
           <p className="text-gray-600 mb-6">
             {participants.length}명이 함께 만든 멋진 이야기예요!
           </p>
+          <button
+            onClick={async () => {
+              if (publishDone || publishing || !storyId) return;
+              setPublishing(true);
+              try {
+                await publishApi.publish({ storyId, scope: 'class' });
+                setPublishDone(true);
+              } catch {}
+              setPublishing(false);
+            }}
+            disabled={publishing || publishDone}
+            className={`w-full py-3 rounded-xl font-bold text-sm mb-4 transition-colors ${
+              publishDone
+                ? 'bg-green-100 text-green-600'
+                : 'bg-white border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50'
+            }`}
+          >
+            {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
+          </button>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push('/student')}

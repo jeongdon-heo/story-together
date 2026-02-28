@@ -6,6 +6,7 @@ import { useBranchSocket } from '../../../../hooks/useBranchSocket';
 import { useBranchStore } from '../../../../stores/branch';
 import { sameStartApi } from '../../../../lib/same-start-api';
 import { storyApi } from '../../../../lib/story-api';
+import { publishApi } from '../../../../lib/publish-api';
 
 function useCurrentUser() {
   if (typeof window === 'undefined') return { userId: '', userName: '', token: '' };
@@ -175,6 +176,8 @@ export default function BranchPage() {
   const [inputText, setInputText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishDone, setPublishDone] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -258,12 +261,31 @@ export default function BranchPage() {
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">이야기 완성!</h2>
           <p className="text-gray-500 mb-6">모두가 함께 만든 갈래 이야기예요!</p>
+          <button
+            onClick={async () => {
+              if (publishDone || publishing || !storyId) return;
+              setPublishing(true);
+              try {
+                await publishApi.publish({ storyId, scope: 'class' });
+                setPublishDone(true);
+              } catch {}
+              setPublishing(false);
+            }}
+            disabled={publishing || publishDone}
+            className={`w-full py-3 rounded-xl font-bold text-sm mb-4 transition-colors ${
+              publishDone
+                ? 'bg-green-100 text-green-600'
+                : 'bg-white border-2 border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+            }`}
+          >
+            {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
+          </button>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push(`/student/branch/${sessionId}/tree`)}
               className="px-5 py-3 border border-emerald-400 text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50"
             >
-              🌿 트리 보기
+              트리 보기
             </button>
             <button
               onClick={() => router.push('/student')}
