@@ -179,7 +179,6 @@ export default function RelayPage() {
   const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showHints, setShowHints] = useState(false);
   const [relayStarted, setRelayStarted] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false); // 제출 후 차례 넘어갈 때까지 입력 차단
   const [publishing, setPublishing] = useState(false);
@@ -198,13 +197,12 @@ export default function RelayPage() {
     completed,
     sessionEnded,
     contentRejected,
-    hints,
     setStoryParts,
+    setCompleted,
     setContentRejected,
-    setHints,
   } = useRelayStore();
 
-  const { submitPart, passTurn, requestHint, addReaction, finishStory, startRelay } =
+  const { submitPart, passTurn, addReaction, finishStory, startRelay } =
     useRelaySocket({
       storyId,
       sessionId,
@@ -279,6 +277,20 @@ export default function RelayPage() {
     }
   }, [contentRejected]);
 
+  // 교사가 세션 종료 후 이야기 완료 감지 (WebSocket 실패 시 REST 폴백)
+  useEffect(() => {
+    if (!sessionEnded || completed || !storyId) return;
+    const poll = setInterval(() => {
+      relayApi.getStory(storyId).then((res) => {
+        if (res.data?.status === 'completed') {
+          setStoryParts(res.data.parts as any);
+          setCompleted(true);
+        }
+      }).catch(() => {});
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [sessionEnded, completed, storyId]);
+
   // 차례가 바뀌면 hasSubmitted 초기화
   useEffect(() => {
     setHasSubmitted(false);
@@ -292,13 +304,7 @@ export default function RelayPage() {
     setHasSubmitted(true); // 즉시 입력 차단
     submitPart(inputText.trim());
     setInputText('');
-    setShowHints(false);
     setSubmitting(false);
-  };
-
-  const handleHint = async () => {
-    requestHint();
-    setShowHints(true);
   };
 
   const handlePass = () => {
@@ -509,28 +515,6 @@ export default function RelayPage() {
         <div ref={bottomRef} />
       </main>
 
-      {/* 힌트 패널 */}
-      {showHints && hints.length > 0 && (
-        <div className="max-w-2xl mx-auto w-full px-4 pb-2">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-semibold text-amber-700">💡 힌트</p>
-              <button
-                onClick={() => setShowHints(false)}
-                className="text-amber-500 text-xs"
-              >
-                닫기
-              </button>
-            </div>
-            {hints.map((h, i) => (
-              <p key={i} className="text-sm text-amber-800 mb-1">
-                • {h.text}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* 입력 영역 */}
       <footer className="bg-white border-t border-gray-200 sticky bottom-0">
         <div className="max-w-2xl mx-auto px-4 py-3">
@@ -550,12 +534,6 @@ export default function RelayPage() {
                 }}
               />
               <div className="flex gap-2">
-                <button
-                  onClick={handleHint}
-                  className="flex-1 py-2.5 border border-amber-300 text-amber-600 rounded-xl text-sm font-semibold hover:bg-amber-50"
-                >
-                  💡 힌트
-                </button>
                 <button
                   onClick={handlePass}
                   className="flex-1 py-2.5 border border-gray-300 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50"

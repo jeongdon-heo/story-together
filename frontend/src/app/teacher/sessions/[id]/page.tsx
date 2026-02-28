@@ -17,6 +17,7 @@ import {
   type StoryPartInfo,
 } from '../../../../lib/teacher-api';
 import { getSessionAnalytics, type SessionAnalytics } from '../../../../lib/analytics-api';
+import { storyApi } from '../../../../lib/story-api';
 import { useTeacherMonitor } from '../../../../hooks/useTeacherMonitor';
 import { getSocket } from '../../../../lib/socket';
 
@@ -177,16 +178,23 @@ export default function SessionDetailPage() {
       if (action === 'pause') await pauseSession(sessionId);
       else if (action === 'resume') await resumeSession(sessionId);
       else {
+        // 1. 릴레이/분기 이야기가 있으면 REST API로 AI 마무리 생성 (신뢰성 확보)
+        if (liveStoryId && (session?.mode === 'relay' || session?.mode === 'branch')) {
+          try {
+            await storyApi.complete(liveStoryId);
+          } catch (e) {
+            console.error('이야기 마무리 생성 실패:', e);
+          }
+        }
+        // 2. 세션 상태 완료로 변경
         await completeSession(sessionId);
-        // 학생들에게 세션 종료 알림 + AI 이야기 마무리 자동 트리거
+        // 3. 소켓으로 학생들에게 알림
         const token = sessionStorage.getItem('accessToken');
         if (token) {
           const sock = getSocket(token);
           sock.emit('session:end_notify', { sessionId });
-          // 릴레이/분기 이야기가 있으면 AI가 자동으로 마무리
-          if (liveStoryId && (session?.mode === 'relay' || session?.mode === 'branch')) {
-            const finishEvent = session?.mode === 'relay' ? 'relay:finish_story' : 'branch:finish_story';
-            sock.emit(finishEvent, { storyId: liveStoryId });
+          if (liveStoryId) {
+            sock.emit('relay:story_completed_notify', { storyId: liveStoryId });
           }
         }
       }
@@ -563,13 +571,20 @@ export default function SessionDetailPage() {
               {!monitor.completed && monitor.parts.length >= 2 && (
                 <div className="p-4 bg-white/80 border-t border-gray-100 text-center">
                   <button
-                    onClick={() => {
-                      if (confirm('이야기를 마무리할까요? AI가 결말을 써줍니다.')) {
+                    onClick={async () => {
+                      if (!confirm('이야기를 마무리할까요? AI가 결말을 써줍니다.')) return;
+                      if (!liveStoryId) return;
+                      try {
+                        await storyApi.complete(liveStoryId);
                         const token = sessionStorage.getItem('accessToken');
-                        if (token && liveStoryId) {
-                          const socket = (window as any).__storySocket || getSocket(token);
-                          socket.emit('relay:finish_story', { storyId: liveStoryId });
+                        if (token) {
+                          const sock = getSocket(token);
+                          sock.emit('relay:story_completed_notify', { storyId: liveStoryId });
                         }
+                        await fetchData();
+                      } catch (e) {
+                        console.error('이야기 마무리 실패:', e);
+                        alert('이야기 마무리에 실패했습니다. 다시 시도해주세요.');
                       }
                     }}
                     className="px-8 py-3 bg-rose-500 text-white text-base font-bold rounded-xl shadow-md hover:bg-rose-600 transition-all"

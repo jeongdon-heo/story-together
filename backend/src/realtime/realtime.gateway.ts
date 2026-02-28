@@ -300,6 +300,29 @@ export class RealtimeGateway
     await this.relayService.finishStory(data.storyId, userId);
   }
 
+  // ─── 교사가 REST로 이야기 완료 후 학생들에게 알림 ──────
+  @SubscribeMessage('relay:story_completed_notify')
+  async handleStoryCompletedNotify(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { storyId: string },
+  ) {
+    const userId = (client as any).userId;
+    if (!userId) return;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'teacher') return;
+
+    // 릴레이 상태 정리 (타이머 중지 등)
+    this.relayService.cleanup(data.storyId);
+
+    // 학생들에게 이야기 완료 알림
+    this.server.to(`story:${data.storyId}`).emit('relay:story_completed', {
+      storyId: data.storyId,
+      completedAt: new Date().toISOString(),
+    });
+    this.logger.log(`교사가 REST로 이야기 완료 후 알림: storyId=${data.storyId}`);
+  }
+
   // ═══════════════════════════════════════════════════════
   // 분기 모드 이벤트 핸들러
   // ═══════════════════════════════════════════════════════
