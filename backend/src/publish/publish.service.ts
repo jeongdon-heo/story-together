@@ -23,7 +23,9 @@ export class PublishService {
     if (story.status !== 'completed') {
       throw new BadRequestException('완성된 이야기만 공개할 수 있습니다.');
     }
-    if (story.userId !== userId) {
+    // solo/same_start: 본인 이야기만 공개 가능
+    // relay/branch: 공유 이야기(userId=null)는 참여한 반 학생 누구나 가능
+    if (story.userId && story.userId !== userId) {
       throw new ForbiddenException('본인의 이야기만 공개할 수 있습니다.');
     }
 

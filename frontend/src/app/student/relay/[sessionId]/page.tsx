@@ -589,19 +589,12 @@ export default function RelayPage() {
             </div>
           )}
 
-          {/* 끝내기 버튼 — 교사가 세션 종료한 후에만 표시 */}
-          {sessionEnded && storyParts.length >= 2 && (
+          {/* 교사가 세션 종료했음을 알림 */}
+          {sessionEnded && (
             <div className="mt-3 text-center">
-              <button
-                onClick={() => {
-                  if (window.confirm('이야기를 마무리할까요? AI가 결말을 써 줄 거예요.')) {
-                    finishStory();
-                  }
-                }}
-                className="px-6 py-3 bg-rose-500 text-white text-base font-bold rounded-xl shadow-md hover:bg-rose-600 transition-all animate-pulse"
-              >
-                이야기 마무리하기
-              </button>
+              <p className="text-sm text-rose-500 font-semibold">
+                선생님이 수업을 종료했어요. 곧 이야기가 마무리됩니다.
+              </p>
             </div>
           )}
         </div>
