@@ -309,7 +309,7 @@ export class RelayService {
     );
 
     this.server.to(socketId).emit('relay:hint_response', {
-      hints: [{ text: hint, direction: '이야기를 이어가 보세요!' }],
+      hints: hint,
     });
   }
 
