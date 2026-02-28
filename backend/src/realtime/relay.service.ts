@@ -58,6 +58,9 @@ export class RelayService {
     } else {
       state.participants.push(participant);
     }
+
+    // 릴레이 진행 중이고 현재 차례가 오프라인이면 온라인 학생에게 차례 넘김
+    this.ensureOnlineTurn(storyId);
   }
 
   leaveSession(storyId: string, socketId: string) {
@@ -69,6 +72,8 @@ export class RelayService {
     );
     if (participant) {
       participant.online = false;
+      // 나간 학생이 현재 차례였으면 다음 온라인 학생에게 차례 넘김
+      this.ensureOnlineTurn(storyId);
     }
   }
 
@@ -391,7 +396,14 @@ export class RelayService {
     if (!state) return;
 
     const prevIdx = state.currentIdx;
-    state.currentIdx = (state.currentIdx + 1) % state.participants.length;
+
+    // 다음 온라인 참여자 찾기 (없으면 그냥 +1)
+    const nextOnlineIdx = this.findNextOnlineIdx(state, state.currentIdx);
+    if (nextOnlineIdx >= 0) {
+      state.currentIdx = nextOnlineIdx;
+    } else {
+      state.currentIdx = (state.currentIdx + 1) % state.participants.length;
+    }
     state.secondsLeft = state.totalSeconds;
 
     this.broadcastTurnChanged(storyId, state, prevIdx);
@@ -452,7 +464,14 @@ export class RelayService {
     this.stopTimer(storyId);
 
     const skipped = state.participants[state.currentIdx];
-    state.currentIdx = (state.currentIdx + 1) % state.participants.length;
+
+    // 다음 온라인 참여자 찾기 (없으면 그냥 +1)
+    const nextOnlineIdx = this.findNextOnlineIdx(state, state.currentIdx);
+    if (nextOnlineIdx >= 0) {
+      state.currentIdx = nextOnlineIdx;
+    } else {
+      state.currentIdx = (state.currentIdx + 1) % state.participants.length;
+    }
     state.secondsLeft = state.totalSeconds;
 
     const next = state.participants[state.currentIdx];
@@ -467,6 +486,45 @@ export class RelayService {
 
     this.broadcastTurnChanged(storyId, state);
     this.startTimer(storyId);
+  }
+
+  /**
+   * startIdx 다음부터 순환하며 온라인 참여자 인덱스를 찾는다.
+   * 없으면 -1 반환.
+   */
+  private findNextOnlineIdx(state: RelayState, startIdx: number): number {
+    for (let i = 1; i <= state.participants.length; i++) {
+      const idx = (startIdx + i) % state.participants.length;
+      if (state.participants[idx].online) return idx;
+    }
+    return -1;
+  }
+
+  /**
+   * 현재 차례가 오프라인 참여자이면 즉시 온라인 참여자에게 차례를 넘긴다.
+   */
+  private ensureOnlineTurn(storyId: string) {
+    const state = this.states.get(storyId);
+    if (!state || !state.isRunning) return;
+    if (state.participants.length === 0) return;
+
+    const current = state.participants[state.currentIdx];
+    if (current?.online) return; // 현재 차례가 온라인이면 OK
+
+    // 현재 인덱스 포함하여 온라인 참여자 탐색 (자기 자신도 체크)
+    // findNextOnlineIdx는 startIdx+1부터 탐색하므로 startIdx-1을 전달
+    const searchFrom = (state.currentIdx - 1 + state.participants.length) % state.participants.length;
+    const onlineIdx = this.findNextOnlineIdx(state, searchFrom);
+    if (onlineIdx < 0) return; // 온라인 참여자 없음, 대기
+
+    this.stopTimer(storyId);
+    state.currentIdx = onlineIdx;
+    state.secondsLeft = state.totalSeconds;
+    this.broadcastTurnChanged(storyId, state);
+    this.startTimer(storyId);
+    this.logger.log(
+      `차례 재배정: ${state.participants[onlineIdx].name} (온라인 우선)`,
+    );
   }
 
   getState(storyId: string): RelayState | undefined {

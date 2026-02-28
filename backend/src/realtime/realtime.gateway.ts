@@ -194,6 +194,14 @@ export class RealtimeGateway
     const room = `story:${data.storyId}`;
     await client.join(room);
 
+    // startRelay를 먼저 호출하여 상태를 생성한 후 joinSession 호출
+    // (joinSession은 상태가 있어야 참여자를 등록할 수 있음)
+    await this.relayService.startRelay(
+      data.storyId,
+      data.sessionId,
+      data.turnSeconds,
+    );
+
     const userId = (client as any).userId;
     if (userId) {
       this.socketMeta.set(client.id, { userId, storyId: data.storyId });
@@ -205,12 +213,6 @@ export class RealtimeGateway
         online: true,
       });
     }
-
-    await this.relayService.startRelay(
-      data.storyId,
-      data.sessionId,
-      data.turnSeconds,
-    );
   }
 
   // ─── 글 제출 ───────────────────────────────────────────
