@@ -280,6 +280,20 @@ export default function BranchPage() {
           >
             {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
           </button>
+          <div className="flex gap-3 justify-center mb-3">
+            <button
+              onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
+              className="px-5 py-3 border border-emerald-400 text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50"
+            >
+              삽화 만들기
+            </button>
+            <button
+              onClick={() => router.push(`/student/solo/${storyId}/book`)}
+              className="px-5 py-3 border border-emerald-400 text-emerald-600 rounded-xl font-semibold hover:bg-emerald-50"
+            >
+              책 보기
+            </button>
+          </div>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => router.push(`/student/branch/${sessionId}/tree`)}

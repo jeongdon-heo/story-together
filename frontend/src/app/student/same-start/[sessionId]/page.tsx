@@ -439,6 +439,20 @@ export default function SameStartStoryPage() {
             >
               {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
             </button>
+            <div className="flex gap-3 justify-center mb-3">
+              <button
+                onClick={() => router.push(`/student/solo/${story.id}/illustrate`)}
+                className="px-5 py-3 border border-amber-400 text-amber-600 rounded-xl font-semibold hover:bg-amber-50"
+              >
+                삽화 만들기
+              </button>
+              <button
+                onClick={() => router.push(`/student/solo/${story.id}/book`)}
+                className="px-5 py-3 border border-amber-400 text-amber-600 rounded-xl font-semibold hover:bg-amber-50"
+              >
+                책 보기
+              </button>
+            </div>
             <button
               onClick={() => router.push(`/student/same-start/${sessionId}/gallery`)}
               className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600"
