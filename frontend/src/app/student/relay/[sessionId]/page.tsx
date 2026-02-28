@@ -206,23 +206,35 @@ export default function RelayPage() {
       token,
     });
 
-  // 세션의 이야기 로드 (또는 생성)
+  // 세션의 이야기 로드 (이미 시작된 릴레이가 있으면 바로 합류)
   useEffect(() => {
     if (!sessionId || !token) return;
 
-    relayApi
-      .getSessionStory(sessionId)
-      .then((res) => {
-        if (res.data && res.data.length > 0) {
-          const story = res.data[0];
-          setStoryId(story.id);
-          setStoryParts(story.parts as any);
-          setRelayStarted(true);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [sessionId, token]);
+    const pollStory = () => {
+      relayApi
+        .getSessionStory(sessionId)
+        .then((res) => {
+          if (res.data && res.data.length > 0) {
+            const story = res.data[0];
+            setStoryId(story.id);
+            setStoryParts(story.parts as any);
+            setRelayStarted(true);
+            setLoading(false);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => setLoading(false));
+    };
+
+    pollStory();
+
+    // 대기 화면에서 다른 학생이 시작할 수 있으므로 3초마다 폴링
+    const interval = setInterval(() => {
+      if (!relayStarted) pollStory();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [sessionId, token, relayStarted]);
 
   // 새 이야기 시작
   const handleStartRelay = async () => {

@@ -21,24 +21,38 @@ export class StoryService {
   ) {}
 
   // 이야기 생성 + 첫 파트 자동 생성
-  // - solo 모드: AI가 이야기 시작 생성
-  // - same_start 모드: 세션 themeData.introText를 공통 도입부로 사용
+  // - solo 모드: AI가 이야기 시작 생성 (학생별 개별)
+  // - same_start 모드: 세션 themeData.introText를 공통 도입부로 사용 (학생별 개별)
+  // - relay/branch 모드: 세션당 하나의 공유 이야기 (이미 있으면 기존 반환)
   async create(userId: string, dto: CreateStoryDto) {
     const session = await this.prisma.session.findUniqueOrThrow({
       where: { id: dto.sessionId },
       include: { classRoom: { select: { grade: true } } },
     });
 
+    const isSharedMode = session.mode === 'relay' || session.mode === 'branch';
+
+    // relay/branch: 이미 이야기가 있으면 기존 이야기 반환 (중복 생성 방지)
+    if (isSharedMode) {
+      const existing = await this.prisma.story.findFirst({
+        where: { sessionId: dto.sessionId },
+        include: { parts: { orderBy: { order: 'asc' } } },
+      });
+      if (existing) {
+        return existing;
+      }
+    }
+
     const aiCharacter = dto.aiCharacter || 'grandmother';
     const grade = session.classRoom?.grade || 3;
     const themeData = session.themeData as any;
     const isSameStart = session.mode === 'same_start';
 
-    // 이야기 생성
+    // 이야기 생성 (relay/branch는 userId를 null로 → 공유 이야기)
     const story = await this.prisma.story.create({
       data: {
         sessionId: dto.sessionId,
-        userId,
+        userId: isSharedMode ? null : userId,
         aiCharacter,
         status: 'writing',
         sharedIntro: isSameStart ? themeData.introText : null,
