@@ -68,6 +68,8 @@ function StoryPartCard({
     (r) => r.partId === part.id,
   );
   const isAi = part.authorType === 'ai';
+  const authorName = part.authorName || part.metadata?.authorName || '학생';
+  const authorColor = part.authorColor || part.metadata?.authorColor || '#6366f1';
   const EMOJIS = ['❤️', '😮', '😂', '👏', '😢'];
 
   return (
@@ -81,15 +83,15 @@ function StoryPartCard({
             ? 'bg-indigo-100 text-indigo-600'
             : 'text-white'
         }`}
-        style={!isAi ? { backgroundColor: part.authorColor || '#6366f1' } : {}}
+        style={!isAi ? { backgroundColor: authorColor } : {}}
       >
-        {isAi ? '🤖' : (part.authorName?.[0] || '?')}
+        {isAi ? '🤖' : authorName[0]}
       </div>
 
       <div className={`max-w-[75%] ${isAi ? '' : 'items-end'} flex flex-col`}>
         {/* 이름 */}
         <p className={`text-xs text-gray-500 mb-1 ${isAi ? '' : 'text-right'}`}>
-          {isAi ? 'AI 친구' : part.authorName}
+          {isAi ? 'AI 친구' : authorName}
         </p>
 
         {/* 말풍선 */}
@@ -289,7 +291,7 @@ export default function RelayPage() {
     setHasSubmitted(false);
   }, [currentTurn?.currentStudentId]);
 
-  const isMyTurn = currentTurn?.currentStudentId === userId && !hasSubmitted;
+  const isMyTurn = currentTurn?.currentStudentId === userId && !hasSubmitted && !sessionEnded;
 
   const handleSubmit = async () => {
     if (!inputText.trim() || submitting || !isMyTurn) return;
@@ -579,26 +581,22 @@ export default function RelayPage() {
           ) : (
             <div className="text-center py-4">
               <p className="text-base font-semibold text-indigo-600">
-                {hasSubmitted
-                  ? '글 제출 완료! AI가 이어서 쓰고 있어요...'
-                  : currentTurn
-                    ? `${currentTurn.currentStudentName}님이 글을 입력할 차례입니다.`
-                    : '친구들이 입장하면 시작돼요!'}
+                {sessionEnded
+                  ? '선생님이 수업을 종료했어요. 곧 이야기가 마무리됩니다.'
+                  : hasSubmitted
+                    ? '글 제출 완료! AI가 이어서 쓰고 있어요...'
+                    : currentTurn
+                      ? `${currentTurn.currentStudentName}님이 글을 입력할 차례입니다.`
+                      : '친구들이 입장하면 시작돼요!'}
               </p>
-              <p className="text-sm text-gray-400 mt-2">
-                이모지로 응원해 주세요! 👆
-              </p>
+              {!sessionEnded && (
+                <p className="text-sm text-gray-400 mt-2">
+                  이모지로 응원해 주세요! 👆
+                </p>
+              )}
             </div>
           )}
 
-          {/* 교사가 세션 종료했음을 알림 */}
-          {sessionEnded && (
-            <div className="mt-3 text-center">
-              <p className="text-sm text-rose-500 font-semibold">
-                선생님이 수업을 종료했어요. 곧 이야기가 마무리됩니다.
-              </p>
-            </div>
-          )}
         </div>
       </footer>
     </div>
