@@ -444,6 +444,32 @@ export class RealtimeGateway
     });
   }
 
+  // ─── 세션 종료 알림 (교사 → 학생들) ───────────────────
+  @SubscribeMessage('session:end_notify')
+  async handleSessionEndNotify(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { sessionId: string },
+  ) {
+    const userId = (client as any).userId;
+    if (!userId) return;
+
+    // 교사인지 확인
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || user.role !== 'teacher') return;
+
+    // 이 세션의 모든 이야기 룸에 종료 알림 전송
+    const stories = await this.prisma.story.findMany({
+      where: { sessionId: data.sessionId },
+      select: { id: true },
+    });
+    for (const story of stories) {
+      this.server.to(`story:${story.id}`).emit('session:ended', {
+        sessionId: data.sessionId,
+      });
+    }
+    this.logger.log(`세션 종료 알림: sessionId=${data.sessionId}, stories=${stories.length}개`);
+  }
+
   // 교사 전용
   @SubscribeMessage('teacher:force_vote_decide')
   async handleForceVoteDecide(

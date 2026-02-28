@@ -191,6 +191,7 @@ export default function RelayPage() {
     totalSeconds,
     aiWriting,
     completed,
+    sessionEnded,
     contentRejected,
     hints,
     setStoryParts,
@@ -558,8 +559,8 @@ export default function RelayPage() {
             </div>
           )}
 
-          {/* 끝내기 버튼 — 파트가 2개 이상이면 누구나 누를 수 있음 */}
-          {storyParts.length >= 2 && (
+          {/* 끝내기 버튼 — 교사가 세션 종료한 후에만 표시 */}
+          {sessionEnded && storyParts.length >= 2 && (
             <div className="mt-3 text-center">
               <button
                 onClick={() => {

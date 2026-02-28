@@ -152,13 +152,39 @@ export default function SessionDetailPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // 실시간 모드인데 이야기가 아직 없으면 학생이 시작할 때까지 폴링
+  useEffect(() => {
+    if (!session) return;
+    const isGroupMode = session.mode === 'relay' || session.mode === 'branch';
+    if (!isGroupMode || session.status !== 'active' || stories.length > 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const storiesRes = await getSessionStories(sessionId);
+        if (storiesRes.length > 0) {
+          setStories(storiesRes);
+        }
+      } catch {}
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [session?.mode, session?.status, stories.length, sessionId]);
+
   const handleStatusChange = async (action: 'pause' | 'resume' | 'complete') => {
     if (!confirm(`세션을 ${action === 'pause' ? '일시정지' : action === 'resume' ? '재개' : '종료'}하시겠습니까?`)) return;
     setActioning(true);
     try {
       if (action === 'pause') await pauseSession(sessionId);
       else if (action === 'resume') await resumeSession(sessionId);
-      else await completeSession(sessionId);
+      else {
+        await completeSession(sessionId);
+        // 학생들에게 세션 종료 알림 (WebSocket)
+        const token = sessionStorage.getItem('accessToken');
+        if (token) {
+          const sock = getSocket(token);
+          sock.emit('session:end_notify', { sessionId });
+        }
+      }
       await fetchData();
     } finally {
       setActioning(false);

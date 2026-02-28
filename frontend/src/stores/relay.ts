@@ -54,6 +54,8 @@ interface RelayState {
   reactions: Reaction[];
   // 완료
   completed: boolean;
+  // 교사가 세션 종료함
+  sessionEnded: boolean;
   // 콘텐츠 반려
   contentRejected: ContentRejection | null;
   // 힌트
@@ -71,6 +73,7 @@ interface RelayState {
   setAiWriting: (writing: boolean) => void;
   setReaction: (reaction: Reaction) => void;
   setCompleted: (completed: boolean) => void;
+  setSessionEnded: (ended: boolean) => void;
   setContentRejected: (rejection: ContentRejection | null) => void;
   setHints: (hints: Array<{ text: string; direction: string }>) => void;
   setBgmMood: (mood: string | null) => void;
@@ -86,6 +89,7 @@ const initialState = {
   aiWriting: false,
   reactions: [],
   completed: false,
+  sessionEnded: false,
   contentRejected: null,
   hints: [],
   bgmMood: null,
@@ -137,6 +141,8 @@ export const useRelayStore = create<RelayState>((set) => ({
     set((state) => ({ reactions: [...state.reactions, reaction] })),
 
   setCompleted: (completed) => set({ completed }),
+
+  setSessionEnded: (sessionEnded) => set({ sessionEnded }),
 
   setContentRejected: (contentRejected) => set({ contentRejected }),
 
