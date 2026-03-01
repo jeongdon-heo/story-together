@@ -163,9 +163,14 @@ export function useRelaySocket({
   }, [storyId]);
 
   const startRelay = useCallback(
-    (turnSeconds?: number, overrideStoryId?: string) => {
+    (turnSeconds?: number, overrideStoryId?: string, groupMemberIds?: string[]) => {
       const sid = overrideStoryId || storyId;
-      socketRef.current?.emit('relay:start', { storyId: sid, sessionId, turnSeconds });
+      socketRef.current?.emit('relay:start', {
+        storyId: sid,
+        sessionId,
+        turnSeconds,
+        groupMemberIds,
+      });
     },
     [storyId, sessionId],
   );

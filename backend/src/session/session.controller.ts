@@ -122,6 +122,22 @@ export class SessionController {
     return { data };
   }
 
+  // 모둠별 이야기 조회 (같은 시작 모둠 모드)
+  @Get(':id/group-story/:groupNumber')
+  async getGroupStory(
+    @Param('id') id: string,
+    @Param('groupNumber') groupNumber: string,
+  ) {
+    const stories = await this.prisma.story.findMany({
+      where: { sessionId: id },
+      include: { parts: { orderBy: { order: 'asc' } } },
+    });
+    const groupStory = stories.find(
+      (s) => (s.metadata as any)?.groupNumber === parseInt(groupNumber),
+    );
+    return { data: groupStory || null };
+  }
+
   // 같은 시작 모드: 갤러리 (세션 내 모든 완성 이야기 목록)
   @Get(':id/gallery')
   async getGallery(@Param('id') id: string) {

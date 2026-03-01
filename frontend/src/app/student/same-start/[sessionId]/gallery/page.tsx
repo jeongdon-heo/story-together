@@ -16,18 +16,26 @@ function StoryCard({
   index,
   onSelect,
   isSelected,
+  groupName,
 }: {
   story: Story & { user?: { id: string; name: string } };
   index: number;
   onSelect: () => void;
   isSelected: boolean;
+  groupName?: string;
 }) {
   const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
-  // 학생이 작성한 파트만 (isIntro가 아닌 student 파트)
-  const studentParts = story.parts.filter(
-    (p) => p.authorType === 'student',
-  );
+  const studentParts = story.parts.filter((p) => p.authorType === 'student');
   const totalWords = story.parts.reduce((sum, p) => sum + p.text.length, 0);
+
+  // 모둠 이야기: 참여 학생 이름은 파트의 authorName에서 추출
+  const isGroupStory = !!(story.metadata as any)?.groupNumber;
+  const authorNames = isGroupStory
+    ? Array.from(new Set(studentParts.map((p) => p.authorName || p.metadata?.authorName).filter(Boolean)))
+    : [];
+  const displayName = isGroupStory
+    ? groupName || `${(story.metadata as any).groupNumber}모둠`
+    : story.user?.name || '학생';
 
   return (
     <div
@@ -36,38 +44,27 @@ function StoryCard({
         isSelected ? 'border-amber-400 shadow-md' : 'border-gray-200'
       }`}
     >
-      {/* 카드 헤더 */}
-      <div
-        className="rounded-t-xl p-4 flex items-center gap-3"
-        style={{ backgroundColor: `${color}15` }}
-      >
+      <div className="rounded-t-xl p-4 flex items-center gap-3" style={{ backgroundColor: `${color}15` }}>
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
           style={{ backgroundColor: color }}
         >
-          {(story.user?.name || '?')[0]}
+          {isGroupStory ? '👥' : (story.user?.name || '?')[0]}
         </div>
         <div>
-          <p className="font-semibold text-gray-900 text-sm">
-            {story.user?.name || '학생'}의 이야기
-          </p>
+          <p className="font-semibold text-gray-900 text-sm">{displayName}의 이야기</p>
           <p className="text-xs text-gray-500">
             {totalWords}자 · {story.parts.length}문단
+            {authorNames.length > 0 && ` · ${authorNames.join(', ')}`}
           </p>
         </div>
         {story.status === 'completed' && (
-          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-            완성
-          </span>
+          <span className="ml-auto text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">완성</span>
         )}
       </div>
-
-      {/* 미리보기 */}
       <div className="p-4">
         {studentParts.length > 0 ? (
-          <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-            {studentParts[0].text}
-          </p>
+          <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">{studentParts[0].text}</p>
         ) : (
           <p className="text-sm text-gray-400 italic">아직 쓰지 않았어요</p>
         )}
@@ -78,18 +75,24 @@ function StoryCard({
 
 function StoryDetail({
   story,
+  groupName,
 }: {
   story: Story & { user?: { id: string; name: string } };
+  groupName?: string;
 }) {
+  const isGroupStory = !!(story.metadata as any)?.groupNumber;
+  const displayName = isGroupStory
+    ? groupName || `${(story.metadata as any).groupNumber}모둠`
+    : story.user?.name || '학생';
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6 max-h-[70vh] overflow-y-auto">
-      <h3 className="font-bold text-gray-900 mb-4">
-        {story.user?.name || '학생'}의 이야기
-      </h3>
+      <h3 className="font-bold text-gray-900 mb-4">{displayName}의 이야기</h3>
       <div className="space-y-4">
         {story.parts.map((part) => {
           const isIntro = part.metadata?.isIntro;
           const isAi = part.authorType === 'ai';
+          const authorName = part.authorName || part.metadata?.authorName;
 
           if (isIntro) {
             return (
@@ -104,13 +107,11 @@ function StoryDetail({
             <div
               key={part.id}
               className={`rounded-xl p-4 ${
-                isAi
-                  ? 'bg-gray-50 border border-gray-100'
-                  : 'bg-indigo-50 border border-indigo-100'
+                isAi ? 'bg-gray-50 border border-gray-100' : 'bg-indigo-50 border border-indigo-100'
               }`}
             >
               <p className="text-xs font-semibold text-gray-500 mb-1">
-                {isAi ? '🤖 AI' : `✏️ ${story.user?.name || '학생'}`}
+                {isAi ? '🤖 AI' : `✏️ ${authorName || story.user?.name || '학생'}`}
               </p>
               <p className="text-sm text-gray-800 leading-relaxed">{part.text}</p>
             </div>
@@ -168,6 +169,9 @@ export default function GalleryPage() {
     }
   };
 
+  const isGroupMode = session?.settings?.participationType === 'group';
+  const groups = (session?.settings?.groups || {}) as Record<string, { name: string; memberIds: string[] }>;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
@@ -222,21 +226,33 @@ export default function GalleryPage() {
 
         {/* 이야기 카드 그리드 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {stories.map((story, i) => (
-            <StoryCard
-              key={story.id}
-              story={story}
-              index={i}
-              isSelected={selectedIdx === i}
-              onSelect={() => setSelectedIdx(selectedIdx === i ? null : i)}
-            />
-          ))}
+          {stories.map((story, i) => {
+            const gn = (story.metadata as any)?.groupNumber;
+            const gName = gn ? groups[String(gn)]?.name : undefined;
+            return (
+              <StoryCard
+                key={story.id}
+                story={story}
+                index={i}
+                isSelected={selectedIdx === i}
+                onSelect={() => setSelectedIdx(selectedIdx === i ? null : i)}
+                groupName={gName}
+              />
+            );
+          })}
         </div>
 
         {/* 선택된 이야기 상세 */}
         {selectedIdx !== null && stories[selectedIdx] && (
           <div className="mt-4">
-            <StoryDetail story={stories[selectedIdx]} />
+            <StoryDetail
+              story={stories[selectedIdx]}
+              groupName={
+                (stories[selectedIdx].metadata as any)?.groupNumber
+                  ? groups[String((stories[selectedIdx].metadata as any).groupNumber)]?.name
+                  : undefined
+              }
+            />
           </div>
         )}
 

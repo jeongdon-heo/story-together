@@ -94,6 +94,15 @@ export const sameStartApi = {
       )
       .then((r) => r.data),
 
+  // ─── 모둠 이야기 조회 ─────────────────────────────────
+
+  getGroupStory: (sessionId: string, groupNumber: number) =>
+    api
+      .get<ApiResponse<Story | null>>(
+        `/sessions/${sessionId}/group-story/${groupNumber}`,
+      )
+      .then((r) => r.data),
+
   // ─── 갤러리 ──────────────────────────────────────────
 
   getGallery: (sessionId: string) =>

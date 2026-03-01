@@ -84,39 +84,83 @@ export class RelayService {
 
   // ─── 릴레이 시작 ───────────────────────────────────────
 
-  async startRelay(storyId: string, sessionId: string, turnSeconds?: number) {
+  async startRelay(
+    storyId: string,
+    sessionId: string,
+    turnSeconds?: number,
+    groupMemberIds?: string[],
+  ) {
     if (this.states.has(storyId)) {
       this.logger.warn(`릴레이 이미 진행 중: ${storyId}`);
       return;
     }
 
-    const story = await this.prisma.story.findUniqueOrThrow({
-      where: { id: storyId },
-      include: {
-        session: {
-          include: {
-            classRoom: {
-              include: {
-                members: {
-                  include: { user: true },
-                  orderBy: { orderIndex: 'asc' },
+    let participants: RelayParticipant[];
+
+    if (groupMemberIds && groupMemberIds.length > 0) {
+      // 모둠 릴레이: 지정된 멤버만 참여자로 설정
+      const story = await this.prisma.story.findUniqueOrThrow({
+        where: { id: storyId },
+        include: { session: { select: { classId: true } } },
+      });
+      const classId = story.session.classId;
+      const members = classId
+        ? await this.prisma.classMember.findMany({
+            where: { classId, userId: { in: groupMemberIds } },
+            include: { user: true },
+            orderBy: { orderIndex: 'asc' },
+          })
+        : [];
+
+      if (members.length > 0) {
+        participants = members.map((m) => ({
+          userId: m.userId,
+          name: m.displayName || m.user.name,
+          color: m.color || '#6366f1',
+          socketId: '',
+          online: false,
+        }));
+      } else {
+        // ClassMember가 없으면 User 테이블에서 직접 조회
+        const users = await this.prisma.user.findMany({
+          where: { id: { in: groupMemberIds } },
+        });
+        participants = users.map((u) => ({
+          userId: u.id,
+          name: u.name,
+          color: '#6366f1',
+          socketId: '',
+          online: false,
+        }));
+      }
+    } else {
+      // 일반 릴레이: 반 전체 멤버
+      const story = await this.prisma.story.findUniqueOrThrow({
+        where: { id: storyId },
+        include: {
+          session: {
+            include: {
+              classRoom: {
+                include: {
+                  members: {
+                    include: { user: true },
+                    orderBy: { orderIndex: 'asc' },
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
-
-    // 반 명부 번호 순으로 참여자 목록 생성
-    const members = story.session.classRoom?.members ?? [];
-    const participants: RelayParticipant[] = members.map((m) => ({
-      userId: m.userId,
-      name: m.displayName || m.user.name,
-      color: m.color || '#6366f1',
-      socketId: '',
-      online: false,
-    }));
+      });
+      const members = story.session.classRoom?.members ?? [];
+      participants = members.map((m) => ({
+        userId: m.userId,
+        name: m.displayName || m.user.name,
+        color: m.color || '#6366f1',
+        socketId: '',
+        online: false,
+      }));
+    }
 
     const seconds = turnSeconds ?? this.DEFAULT_TURN_SECONDS;
 

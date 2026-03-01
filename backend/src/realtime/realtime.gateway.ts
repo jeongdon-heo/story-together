@@ -109,9 +109,29 @@ export class RealtimeGateway
           where: { id: data.storyId },
           include: { session: true },
         });
-        if (story && story.session?.mode === 'relay' && story.status === 'writing') {
-          this.logger.log(`릴레이 상태 자동 복구: ${data.storyId}`);
-          await this.relayService.startRelay(data.storyId, story.sessionId);
+        if (story && story.status === 'writing') {
+          const mode = story.session?.mode;
+          const settings = story.session?.settings as any;
+          const isSameStartGroup =
+            mode === 'same_start' && settings?.participationType === 'group';
+
+          if (mode === 'relay') {
+            this.logger.log(`릴레이 상태 자동 복구: ${data.storyId}`);
+            await this.relayService.startRelay(data.storyId, story.sessionId);
+          } else if (isSameStartGroup) {
+            const groupNumber = (story.metadata as any)?.groupNumber;
+            const groupMembers =
+              settings.groups?.[String(groupNumber)]?.memberIds || [];
+            this.logger.log(
+              `모둠 릴레이 상태 자동 복구: ${data.storyId}, 모둠 ${groupNumber}`,
+            );
+            await this.relayService.startRelay(
+              data.storyId,
+              story.sessionId,
+              undefined,
+              groupMembers,
+            );
+          }
         }
       } catch (e) {
         this.logger.warn(`릴레이 자동 복구 실패: ${e}`);
@@ -206,7 +226,12 @@ export class RealtimeGateway
   async handleRelayStart(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    data: { storyId: string; sessionId: string; turnSeconds?: number },
+    data: {
+      storyId: string;
+      sessionId: string;
+      turnSeconds?: number;
+      groupMemberIds?: string[];
+    },
   ) {
     // 클라이언트가 아직 룸에 없을 수 있으므로 자동 join
     const room = `story:${data.storyId}`;
@@ -218,6 +243,7 @@ export class RealtimeGateway
       data.storyId,
       data.sessionId,
       data.turnSeconds,
+      data.groupMemberIds,
     );
 
     const userId = (client as any).userId;

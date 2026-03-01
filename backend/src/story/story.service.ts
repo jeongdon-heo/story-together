@@ -22,7 +22,8 @@ export class StoryService {
 
   // 이야기 생성 + 첫 파트 자동 생성
   // - solo 모드: AI가 이야기 시작 생성 (학생별 개별)
-  // - same_start 모드: 세션 themeData.introText를 공통 도입부로 사용 (학생별 개별)
+  // - same_start 개인 모드: 세션 themeData.introText를 공통 도입부로 사용 (학생별 개별)
+  // - same_start 모둠 모드: 모둠별 공유 이야기 (릴레이 방식)
   // - relay/branch 모드: 세션당 하나의 공유 이야기 (이미 있으면 기존 반환)
   async create(userId: string, dto: CreateStoryDto) {
     const session = await this.prisma.session.findUniqueOrThrow({
@@ -31,6 +32,9 @@ export class StoryService {
     });
 
     const isSharedMode = session.mode === 'relay' || session.mode === 'branch';
+    const settings = session.settings as any;
+    const isSameStartGroup =
+      session.mode === 'same_start' && settings?.participationType === 'group';
 
     // relay/branch: 이미 이야기가 있으면 기존 이야기 반환 (중복 생성 방지)
     if (isSharedMode) {
@@ -41,6 +45,59 @@ export class StoryService {
       if (existing) {
         return existing;
       }
+    }
+
+    // same_start 모둠 모드: 모둠별 공유 이야기 (이미 있으면 반환)
+    if (isSameStartGroup) {
+      const groups = settings.groups || {};
+      let userGroupNumber: string | null = null;
+      for (const [key, group] of Object.entries(groups)) {
+        if ((group as any).memberIds?.includes(userId)) {
+          userGroupNumber = key;
+          break;
+        }
+      }
+      if (!userGroupNumber) {
+        throw new ForbiddenException('모둠에 참여해야 이야기를 시작할 수 있습니다');
+      }
+
+      // 이 모둠의 이야기가 이미 있으면 반환
+      const sessionStories = await this.prisma.story.findMany({
+        where: { sessionId: dto.sessionId },
+        include: { parts: { orderBy: { order: 'asc' } } },
+      });
+      const existingGroupStory = sessionStories.find(
+        (s) => (s.metadata as any)?.groupNumber === parseInt(userGroupNumber!),
+      );
+      if (existingGroupStory) {
+        return existingGroupStory;
+      }
+
+      // 모둠 공유 이야기 생성
+      const aiCharacter = dto.aiCharacter || 'grandmother';
+      const themeData = session.themeData as any;
+      const story = await this.prisma.story.create({
+        data: {
+          sessionId: dto.sessionId,
+          userId: null,
+          aiCharacter,
+          status: 'writing',
+          sharedIntro: themeData.introText || null,
+          metadata: { groupNumber: parseInt(userGroupNumber) },
+        },
+      });
+
+      const firstPart = await this.prisma.storyPart.create({
+        data: {
+          storyId: story.id,
+          authorType: 'ai',
+          text: themeData.introText || '옛날 옛날에...',
+          order: 1,
+          metadata: { mood: 'peaceful', isIntro: true },
+        },
+      });
+
+      return { ...story, parts: [firstPart] };
     }
 
     const aiCharacter = dto.aiCharacter || 'grandmother';
@@ -63,7 +120,7 @@ export class StoryService {
     let firstPartMeta: Record<string, any>;
 
     if (isSameStart && themeData.introText) {
-      // 같은 시작: 공통 도입부를 첫 파트로 사용
+      // 같은 시작 (개인): 공통 도입부를 첫 파트로 사용
       firstPartText = themeData.introText;
       firstPartMeta = { mood: 'peaceful', isIntro: true };
     } else {
