@@ -27,12 +27,26 @@ export default function RelayEntryPage() {
     setError('');
 
     try {
-      // shortCode(6자리)면 API로 세션 ID 조회
       if (trimmed.length <= 8 && !/^[0-9a-f-]{36}$/i.test(trimmed)) {
         const res = await relayApi.findByCode(trimmed);
+        const sessionMode = res.data.mode;
+        // 모드가 다르면 올바른 페이지로 안내
+        if (sessionMode && sessionMode !== 'relay') {
+          const modeRoutes: Record<string, string> = {
+            same_start: 'same-start',
+            branch: 'branch',
+          };
+          const route = modeRoutes[sessionMode];
+          if (route) {
+            router.push(`/student/${route}/${res.data.id}`);
+            return;
+          }
+          setError(`이 코드는 릴레이 모드가 아닙니다 (${sessionMode})`);
+          setLoading(false);
+          return;
+        }
         router.push(`/student/relay/${res.data.id}`);
       } else {
-        // 직접 UUID 입력한 경우
         router.push(`/student/relay/${trimmed}`);
       }
     } catch (e: any) {

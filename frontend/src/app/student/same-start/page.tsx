@@ -26,11 +26,8 @@ export default function SameStartEntryPage() {
     setLoading(true);
 
     try {
-      // 6~8자 영숫자 → 단축코드로 판단, UUID(36자)는 직접 사용
       if (trimmed.length <= 8 && !/^[0-9a-f-]{36}$/i.test(trimmed)) {
-        const res = await fetch(
-          `${getBaseURL()}/sessions/join/${trimmed}`,
-        );
+        const res = await fetch(`${getBaseURL()}/sessions/join/${trimmed}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           setError(body.message || '코드를 찾을 수 없습니다');
@@ -38,7 +35,22 @@ export default function SameStartEntryPage() {
         }
         const body = await res.json();
         const sessionId = body.data?.id;
+        const sessionMode = body.data?.mode;
         if (!sessionId) { setError('세션 정보를 불러올 수 없습니다'); return; }
+        // 모드가 다르면 올바른 페이지로 안내
+        if (sessionMode && sessionMode !== 'same_start') {
+          const modeRoutes: Record<string, string> = {
+            relay: 'relay',
+            branch: 'branch',
+          };
+          const route = modeRoutes[sessionMode];
+          if (route) {
+            router.push(`/student/${route}/${sessionId}`);
+            return;
+          }
+          setError(`이 코드는 같은 시작 모드가 아닙니다`);
+          return;
+        }
         router.push(`/student/same-start/${sessionId}`);
       } else {
         router.push(`/student/same-start/${trimmed}`);

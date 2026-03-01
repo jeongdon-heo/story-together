@@ -399,7 +399,6 @@ export default function SameStartStoryPage() {
   const isCompleted = story?.status === 'completed';
   const introText = session?.themeData?.introText;
   const isGroupMode = session?.settings?.participationType === 'group';
-  const needsGroupSelection = isGroupMode && !myGroup;
   const isMyTurn = currentTurn?.currentStudentId === userId && !hasSubmitted && !sessionEnded;
 
   // ─── 로딩 ──────────────────────────────────────────────
@@ -408,6 +407,65 @@ export default function SameStartStoryPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // ─── 모둠 모드: 모둠 미선택 시 항상 모둠 선택 화면 ──────
+
+  if (isGroupMode && !myGroup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-lg w-full">
+          <div className="text-center mb-6">
+            <span className="text-4xl">🌟</span>
+            <h2 className="text-xl font-bold text-gray-900 mt-2">
+              {session?.title || '같은 시작, 다른 결말'}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              모둠 친구들과 번갈아 가며 이야기를 만들어 보세요!
+            </p>
+          </div>
+
+          {introText && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+              <p className="text-xs font-semibold text-amber-700 mb-2">📖 공통 도입부</p>
+              <p className="text-sm text-gray-800 leading-relaxed">{introText}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">{error}</div>
+          )}
+
+          <div className="mb-6">
+            <p className="text-sm font-bold text-gray-700 mb-3 text-center">👥 모둠을 선택하세요</p>
+            <div className="grid grid-cols-2 gap-2">
+              {Array.from({ length: session.settings.groupCount || 4 }, (_, i) => i + 1).map((num) => {
+                const group = session.settings.groups?.[String(num)];
+                const memberCount = group?.memberIds?.length || 0;
+                return (
+                  <button
+                    key={num}
+                    onClick={() => handleJoinGroup(num)}
+                    disabled={joiningGroup}
+                    className="p-4 rounded-xl border-2 border-amber-200 hover:border-amber-500 hover:bg-amber-50 transition-all disabled:opacity-50"
+                  >
+                    <p className="text-base font-bold text-gray-800">{group?.name || `${num}모둠`}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{memberCount}명 참여 중</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            onClick={() => router.push('/student')}
+            className="w-full text-sm text-gray-400 hover:text-gray-600 mt-2"
+          >
+            돌아가기
+          </button>
+        </div>
       </div>
     );
   }
@@ -467,9 +525,9 @@ export default function SameStartStoryPage() {
     );
   }
 
-  // ─── 이야기 시작 전 (도입부 + 모둠 선택) ─────────────────
+  // ─── 모둠 모드: 모둠 선택 완료, 릴레이 대기/시작 ─────────
 
-  if (!story && !(isGroupMode && groupRelayStarted)) {
+  if (isGroupMode && myGroup && !groupRelayStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-xl p-8 max-w-lg w-full">
@@ -479,9 +537,7 @@ export default function SameStartStoryPage() {
               {session?.title || '같은 시작, 다른 결말'}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {isGroupMode
-                ? '모둠 친구들과 번갈아 가며 이야기를 만들어 보세요!'
-                : '아래 도입부로 시작해서 나만의 이야기를 써 보세요!'}
+              모둠 친구들과 번갈아 가며 이야기를 만들어 보세요!
             </p>
           </div>
 
@@ -496,40 +552,53 @@ export default function SameStartStoryPage() {
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">{error}</div>
           )}
 
-          {/* 모둠 선택 */}
-          {needsGroupSelection && (
-            <div className="mb-6">
-              <p className="text-sm font-bold text-gray-700 mb-3 text-center">👥 모둠을 선택하세요</p>
-              <div className="grid grid-cols-2 gap-2">
-                {Array.from({ length: session.settings.groupCount || 4 }, (_, i) => i + 1).map((num) => {
-                  const group = session.settings.groups?.[String(num)];
-                  const memberCount = group?.memberIds?.length || 0;
-                  return (
-                    <button
-                      key={num}
-                      onClick={() => handleJoinGroup(num)}
-                      disabled={joiningGroup}
-                      className="p-4 rounded-xl border-2 border-amber-200 hover:border-amber-500 hover:bg-amber-50 transition-all disabled:opacity-50"
-                    >
-                      <p className="text-base font-bold text-gray-800">{num}모둠</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{memberCount}명 참여 중</p>
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center">
+            <p className="text-sm font-bold text-green-700">✅ {myGroup.groupName}에 참여했어요!</p>
+            <p className="text-xs text-gray-500 mt-1">모둠 친구들이 모이면 시작해 주세요</p>
+          </div>
+
+          <button
+            onClick={handleGroupStart}
+            disabled={starting}
+            className="w-full py-4 bg-amber-500 text-white rounded-2xl font-bold text-lg hover:bg-amber-600 disabled:opacity-50"
+          >
+            {starting ? '시작 중...' : '이야기 시작하기! ✏️'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 개인 모드: 이야기 시작 전 (도입부) ─────────────────
+
+  if (!story && !isGroupMode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-lg w-full">
+          <div className="text-center mb-6">
+            <span className="text-4xl">🌟</span>
+            <h2 className="text-xl font-bold text-gray-900 mt-2">
+              {session?.title || '같은 시작, 다른 결말'}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              아래 도입부로 시작해서 나만의 이야기를 써 보세요!
+            </p>
+          </div>
+
+          {introText && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+              <p className="text-xs font-semibold text-amber-700 mb-2">📖 공통 도입부</p>
+              <p className="text-sm text-gray-800 leading-relaxed">{introText}</p>
             </div>
           )}
 
-          {/* 모둠 선택 완료 */}
-          {isGroupMode && myGroup && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center">
-              <p className="text-sm font-bold text-green-700">✅ {myGroup.groupName}에 참여했어요!</p>
-            </div>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">{error}</div>
           )}
 
           <button
-            onClick={isGroupMode ? handleGroupStart : handleStart}
-            disabled={starting || needsGroupSelection}
+            onClick={handleStart}
+            disabled={starting}
             className="w-full py-4 bg-amber-500 text-white rounded-2xl font-bold text-lg hover:bg-amber-600 disabled:opacity-50"
           >
             {starting ? '시작 중...' : '이야기 시작하기! ✏️'}
