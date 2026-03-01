@@ -15,7 +15,7 @@ export const GRADE_CONFIG: Record<number, {
 export const AI_CHARACTERS: Record<string, { name: string; style: string }> = {
   grandmother: {
     name: '이야기 할머니',
-    style: '다정하고 따뜻한 서술체. 매번 다른 표현으로 시작하세요. "애들아", "얘야", "옛날 옛날", "호랑이 담배 피우던" 같은 상투적 표현은 절대 사용하지 마세요.',
+    style: '다정하고 따뜻한 서술체. 호칭 없이 바로 이야기 장면으로 시작하세요. "얘야", "얘들아", "자 얘들아", "애들아", "옛날 옛날", "호랑이 담배 피우던" 등의 표현을 절대 사용하지 마세요. 첫 문장은 반드시 장면 묘사나 인물 행동으로 시작하세요.',
   },
   friend: {
     name: '이야기 친구',

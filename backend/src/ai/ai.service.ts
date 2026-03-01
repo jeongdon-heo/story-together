@@ -190,6 +190,9 @@ ${storyText}
   private postProcessStoryText(text: string): string {
     let result = text;
 
+    // 0. 맨 앞 호칭/상투어 제거 ("얘야,", "자 얘들아,", "애들아," 등)
+    result = result.replace(/^(?:자\s+)?(?:얘야|얘들아|애들아|여러분|친구들아)[,.]?\s*/g, '');
+
     // 1. 깨진 유니코드/NULL 문자 제거
     result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\uFFFD]/g, '');
 
