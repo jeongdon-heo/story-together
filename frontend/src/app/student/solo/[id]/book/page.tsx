@@ -45,6 +45,8 @@ export default function StoryBookPage() {
 
   if (!story) return null;
 
+  const storyMode = story.session?.mode || 'solo';
+  const isSoloMode = storyMode === 'solo';
   const cover = illustrations.find((i) => i.isCover);
   const sceneMap = Object.fromEntries(
     illustrations.filter((i) => !i.isCover).map((i) => [i.sceneIndex, i]),
@@ -76,12 +78,14 @@ export default function StoryBookPage() {
         </button>
         <span className="text-sm font-semibold text-amber-700">📚 동화책</span>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
-            className="text-sm text-violet-500 hover:text-violet-700"
-          >
-            삽화 편집
-          </button>
+          {isSoloMode && (
+            <button
+              onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
+              className="text-sm text-violet-500 hover:text-violet-700"
+            >
+              삽화 편집
+            </button>
+          )}
           <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
         </div>
       </div>
@@ -229,12 +233,14 @@ export default function StoryBookPage() {
             <div className="text-center py-6 bg-white rounded-2xl border border-dashed border-violet-200">
               <p className="text-3xl mb-2">🎨</p>
               <p className="text-sm text-gray-500 mb-3">아직 삽화가 없어요</p>
-              <button
-                onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
-                className="px-4 py-2 bg-violet-500 text-white text-sm font-bold rounded-xl hover:bg-violet-600 transition-colors"
-              >
-                삽화 만들러 가기
-              </button>
+              {isSoloMode && (
+                <button
+                  onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
+                  className="px-4 py-2 bg-violet-500 text-white text-sm font-bold rounded-xl hover:bg-violet-600 transition-colors"
+                >
+                  삽화 만들러 가기
+                </button>
+              )}
             </div>
           )}
         </div>

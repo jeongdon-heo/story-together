@@ -178,8 +178,9 @@ export default function SessionDetailPage() {
       if (action === 'pause') await pauseSession(sessionId);
       else if (action === 'resume') await resumeSession(sessionId);
       else {
-        // 1. 릴레이/분기 이야기가 있으면 REST API로 AI 마무리 생성 (신뢰성 확보)
-        if (liveStoryId && (session?.mode === 'relay' || session?.mode === 'branch')) {
+        // 1. 릴레이/분기 이야기가 있고 아직 완료되지 않았으면 AI 마무리 생성
+        const liveStory = stories.find(s => s.id === liveStoryId);
+        if (liveStoryId && liveStory?.status === 'writing' && (session?.mode === 'relay' || session?.mode === 'branch')) {
           try {
             await storyApi.complete(liveStoryId);
           } catch (e) {
@@ -797,6 +798,24 @@ export default function SessionDetailPage() {
                           )}
                         </div>
                       ))}
+
+                      {/* 교사용 삽화/책 보기 버튼 (완료된 이야기만) */}
+                      {story.status === 'completed' && (
+                        <div className="flex gap-2 justify-center pt-3 border-t border-gray-100">
+                          <button
+                            onClick={() => router.push(`/student/solo/${story.id}/illustrate`)}
+                            className="px-4 py-2 text-xs font-semibold border border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50"
+                          >
+                            삽화 만들기
+                          </button>
+                          <button
+                            onClick={() => router.push(`/student/solo/${story.id}/book`)}
+                            className="px-4 py-2 text-xs font-semibold border border-indigo-300 text-indigo-600 rounded-lg hover:bg-indigo-50"
+                          >
+                            책 보기
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

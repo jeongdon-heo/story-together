@@ -7,10 +7,12 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { IsNotEmpty, IsIn, IsOptional, IsUUID, IsNumber } from 'class-validator';
 import { IllustrationService } from './illustration.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 const VALID_STYLES = ['crayon', 'watercolor', 'sketch', 'classic', 'cartoon', 'fantasy'];
 
@@ -47,11 +49,28 @@ class GenerateCoverDto {
 
 @Controller('illustrations')
 export class IllustrationController {
-  constructor(private readonly illustrationService: IllustrationService) {}
+  constructor(
+    private readonly illustrationService: IllustrationService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  // 공유 모드(relay/same_start/branch) 이야기는 교사만 삽화 생성 가능
+  private async checkIllustrationPermission(storyId: string, user: any) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      include: { session: { select: { mode: true } } },
+    });
+    if (!story) return;
+    const mode = story.session?.mode;
+    if ((mode === 'relay' || mode === 'same_start' || mode === 'branch') && user.role !== 'teacher') {
+      throw new ForbiddenException('이 모드의 삽화는 선생님만 만들 수 있어요');
+    }
+  }
 
   // 장면 분석
   @Post('analyze-scenes')
-  async analyzeScenes(@Body() dto: AnalyzeScenesDto) {
+  async analyzeScenes(@CurrentUser() user: any, @Body() dto: AnalyzeScenesDto) {
+    await this.checkIllustrationPermission(dto.storyId, user);
     const scenes = await this.illustrationService.analyzeScenes(dto.storyId);
     return { data: { scenes } };
   }
@@ -59,7 +78,8 @@ export class IllustrationController {
   // 삽화 생성 (비동기)
   @Post('generate')
   @HttpCode(HttpStatus.ACCEPTED)
-  async generate(@Body() dto: GenerateIllustrationDto) {
+  async generate(@CurrentUser() user: any, @Body() dto: GenerateIllustrationDto) {
+    await this.checkIllustrationPermission(dto.storyId, user);
     const result = await this.illustrationService.generateIllustration(
       dto.storyId,
       dto.sceneIndex,
@@ -73,7 +93,8 @@ export class IllustrationController {
   // 표지 생성 (비동기)
   @Post('generate-cover')
   @HttpCode(HttpStatus.ACCEPTED)
-  async generateCover(@Body() dto: GenerateCoverDto) {
+  async generateCover(@CurrentUser() user: any, @Body() dto: GenerateCoverDto) {
+    await this.checkIllustrationPermission(dto.storyId, user);
     const result = await this.illustrationService.generateCover(dto.storyId, dto.style);
     return { data: result };
   }

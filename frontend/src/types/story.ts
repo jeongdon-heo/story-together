@@ -28,6 +28,7 @@ export interface Story {
   metadata: { totalTurns: number; wordCount: number };
   parts: StoryPart[];
   branchNodes?: BranchNodeData[];
+  session?: { mode: string; classRoom?: { grade: number } };
   completedAt: string | null;
   createdAt: string;
 }

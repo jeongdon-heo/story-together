@@ -139,12 +139,14 @@ function StoryCard({
 
         {isCompleted && (
           <>
-            <button
-              onClick={() => onNavigate(`/student/solo/${story.id}/illustrate`)}
-              className="flex-1 text-xs font-medium bg-indigo-50 text-indigo-600 rounded-lg px-2 py-2 hover:bg-indigo-100 transition-colors"
-            >
-              🎨 삽화
-            </button>
+            {isSolo && (
+              <button
+                onClick={() => onNavigate(`/student/solo/${story.id}/illustrate`)}
+                className="flex-1 text-xs font-medium bg-indigo-50 text-indigo-600 rounded-lg px-2 py-2 hover:bg-indigo-100 transition-colors"
+              >
+                🎨 삽화
+              </button>
+            )}
             <button
               onClick={() => onNavigate(`/student/solo/${story.id}/book`)}
               className="flex-1 text-xs font-medium bg-amber-50 text-amber-600 rounded-lg px-2 py-2 hover:bg-amber-100 transition-colors"

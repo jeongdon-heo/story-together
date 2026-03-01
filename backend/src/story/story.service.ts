@@ -236,8 +236,11 @@ export class StoryService {
       },
     });
 
+    // 이미 완료된 이야기면 기존 데이터 반환 (멱등성 보장)
     if (story.status !== 'writing') {
-      throw new ForbiddenException('이미 완료된 이야기입니다');
+      this.logger.log(`complete: 이미 완료된 이야기 — storyId=${storyId}`);
+      const lastPart = story.parts[story.parts.length - 1];
+      return { endingPart: lastPart, story };
     }
 
     // 소유권 검증: 본인 이야기이거나 교사만 완료 가능

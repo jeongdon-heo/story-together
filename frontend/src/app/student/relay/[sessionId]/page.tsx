@@ -200,7 +200,16 @@ export default function RelayPage() {
     setStoryParts,
     setCompleted,
     setContentRejected,
+    reset: resetRelayStore,
   } = useRelayStore();
+
+  // 세션이 바뀌면 스토어 초기화 (이전 세션 상태 잔류 방지)
+  useEffect(() => {
+    resetRelayStore();
+    setStoryId('');
+    setRelayStarted(false);
+    setLoading(true);
+  }, [sessionId]);
 
   const { submitPart, passTurn, addReaction, finishStory, startRelay } =
     useRelaySocket({
@@ -324,8 +333,8 @@ export default function RelayPage() {
     );
   }
 
-  // 완료 화면
-  if (completed) {
+  // 완료 화면 (현재 세션의 storyId가 있을 때만 표시 — Zustand 잔류 방지)
+  if (completed && storyId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-xl">
@@ -356,12 +365,6 @@ export default function RelayPage() {
             {publishDone ? '공개 신청 완료! (선생님 승인 후 공개돼요)' : publishing ? '신청 중...' : '이야기 공개 신청'}
           </button>
           <div className="flex gap-3 justify-center mb-3">
-            <button
-              onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
-              className="px-5 py-3 border border-indigo-400 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50"
-            >
-              삽화 만들기
-            </button>
             <button
               onClick={() => router.push(`/student/solo/${storyId}/book`)}
               className="px-5 py-3 border border-indigo-400 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50"
