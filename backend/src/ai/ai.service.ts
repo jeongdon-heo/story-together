@@ -78,6 +78,25 @@ ${grade}학년이 흥미를 가질 만한 주제여야 합니다.`;
     '신기한 서커스': '어느 날 아침, 마을 광장에 커다란 천막이 나타났어요. 간판에는 "한 번뿐인 신기한 서커스"라고 적혀 있었어요. 민준이가 천막 안으로 들어가자 눈이 휘둥그레졌어요. 토끼가 모자에서 마술사를 꺼내고, 곰이 외줄 위에서 춤을 추고 있었어요. 그때 단장님이 다가와 말했어요. "특별한 손님이 왔구나! 우리에게 도움이 필요하단다."',
   };
 
+  // 이야기 시작 다양성을 위한 랜덤 요소들
+  private readonly storyOpenings = [
+    '주인공이 평범한 일상에서 우연히 특별한 것을 발견하는 것으로 시작하세요.',
+    '주인공이 낯선 장소에 도착하는 것으로 시작하세요.',
+    '주인공이 이상한 소리나 현상을 목격하는 것으로 시작하세요.',
+    '주인공이 새로운 친구를 만나는 것으로 시작하세요.',
+    '주인공에게 누군가 도움을 요청하는 것으로 시작하세요.',
+    '주인공이 꿈에서 깨어나 신비한 변화를 발견하는 것으로 시작하세요.',
+    '주인공이 오래된 물건이나 편지를 발견하는 것으로 시작하세요.',
+    '주인공이 비밀 통로나 숨겨진 길을 발견하는 것으로 시작하세요.',
+    '계절이 바뀌는 날, 주인공에게 특별한 일이 일어나는 것으로 시작하세요.',
+    '주인공이 학교에서 돌아오다 예상치 못한 광경을 보는 것으로 시작하세요.',
+  ];
+
+  private readonly namePool = [
+    '하늘', '서윤', '도윤', '지아', '민준', '수아', '예준', '하린', '시우', '지호',
+    '다은', '은우', '소율', '현서', '유나', '태양', '채원', '주원', '나윤', '건우',
+  ];
+
   // 이야기 시작 생성
   async generateStoryStart(
     theme: { label: string; desc?: string },
@@ -87,13 +106,21 @@ ${grade}학년이 흥미를 가질 만한 주제여야 합니다.`;
     const systemPrompt = buildSystemPrompt(grade, aiCharacter);
     const gc = GRADE_CONFIG[grade] || GRADE_CONFIG[3];
 
+    // 매번 다른 이야기가 나오도록 랜덤 요소 추가
+    const opening = this.storyOpenings[Math.floor(Math.random() * this.storyOpenings.length)];
+    const heroName = this.namePool[Math.floor(Math.random() * this.namePool.length)];
+    const randomSeed = Math.floor(Math.random() * 1000);
+
     const userMessage = `"${theme.label}" 주제로 동화의 첫 부분을 시작해주세요.
 ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 
-- 주인공과 배경을 소개하세요.
+- 주인공 이름은 "${heroName}"(으)로 하세요.
+- ${opening}
+- 이전에 생성한 이야기와 완전히 다른 새로운 이야기를 만드세요. (시드: ${randomSeed})
+- 배경, 등장인물, 상황을 독창적이고 신선하게 설정하세요.
 - 학생이 흥미를 가지고 이어쓸 수 있는 상황을 만들어주세요.
 - ${gc.sentenceLen}으로 작성하세요.
-- 절대 물음표(?)를 사용하지 마세요. 마지막 문장은 반드시 서술형(~했습니다, ~있었어요)으로 끝내세요.
+- 물음표(?) 사용 금지. 질문형 문장 금지. 마지막 문장은 반드시 서술형(~했어요, ~있었어요)으로 끝내세요.
 - 100% 한국어로만 작성하세요. 영어 단어를 절대 사용하지 마세요.`;
 
     try {
@@ -136,9 +163,10 @@ ${theme.desc ? `주제 설명: ${theme.desc}` : ''}
 ${storyText}
 
 위 이야기에 이어지는 다음 장면을 작성하세요.
-[필수] 절대 물음표(?)를 사용하지 마세요. "~할까요?", "~일까요?" 같은 질문형 문장을 쓰지 마세요.
-[필수] 마지막 문장은 반드시 서술형(~했습니다, ~있었습니다, ~이었답니다)으로 끝내세요.
-[필수] 100% 한국어로만 작성하세요. 영어 단어를 절대 쓰지 마세요.`;
+[금지] 물음표(?) 사용 금지. 질문형 문장 금지. "~할까", "~일까", "~인가", "~을까", "과연", "어떻게 될지", "무슨 일이" 같은 의문/궁금증 유발 표현 일체 금지.
+[필수] 마지막 문장은 반드시 구체적인 행동이나 장면 묘사의 서술형(~했어요, ~있었어요, ~이었답니다)으로 끝내세요.
+[필수] 100% 한국어로만 작성하세요. 영어 단어를 절대 쓰지 마세요.
+[참고] 나쁜 예: "과연 어떤 일이 벌어질지 기대가 되었어요." → 좋은 예: "주인공은 용기를 내어 한 걸음 앞으로 나아갔어요."`;
 
     this.logger.log(`continueStory: parts=${previousParts.length}, msgLen=${userMessage.length}`);
 
@@ -158,7 +186,7 @@ ${storyText}
     }
   }
 
-  // 후처리: 물음표 제거 + 영어 제거 + 깨진 문자 정리 + 비한국어 검증
+  // 후처리: 물음표 제거 + 질문형 문장 제거 + 영어 제거 + 깨진 문자 정리 + 비한국어 검증
   private postProcessStoryText(text: string): string {
     let result = text;
 
@@ -166,28 +194,31 @@ ${storyText}
     result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\uFFFD]/g, '');
 
     // 2. 영어 단어/문장 제거 (한국어 문장 사이에 끼어든 영어)
-    // 영어 단어가 3자 이상 연속이면 제거 (단, 문장 전체가 영어인 경우도 처리)
     result = result.replace(/[A-Za-z]{3,}[\s,.'!?A-Za-z]*/g, '').trim();
-    // 불필요한 공백 정리
     result = result.replace(/\s{2,}/g, ' ').trim();
 
-    // 3. 물음표로 끝나는 문장 제거 (마지막뿐 아니라 전체에서)
+    // 3. 물음표로 끝나는 문장 제거 + 질문형 패턴이 포함된 문장 제거
+    const questionPatterns = /(?:할까요|일까요|인걸까요|아닐까요|할까|일까|인가|을까|는\s*걸까|될까|었을까|과연\s*.{0,20}(?:일지|인지|할지|될지)|어떤\s*.{0,15}(?:일지|할지|될지)|무슨\s*일이\s*.{0,10}(?:일지|할지|벌어질지)|어떻게\s*될지|무엇이\s*.{0,10}(?:일지|할지))/;
+
     const sentences = result.split(/(?<=[.!?。])\s*/);
     const filtered = sentences.filter(s => {
       const trimmed = s.trim();
       if (!trimmed) return false;
-      // 물음표로 끝나는 문장 제거
       if (trimmed.endsWith('?')) return false;
+      if (questionPatterns.test(trimmed)) return false;
       return true;
     });
     result = filtered.join(' ');
 
-    // 4. 결과가 너무 짧으면 (문장 제거로 인해) 원본 사용하되 물음표만 마침표로 교체
+    // 4. 마지막 문장이 질문형 패턴으로 끝나면 제거 (문장 분리 못 한 경우 대비)
+    result = result.replace(/[^.!。]*(?:할까요|일까요|할까|일까|을까|는\s*걸까|과연[^.!。]*(?:일지|할지|될지))[^.!。]*[.!。]?\s*$/g, '').trim();
+
+    // 5. 결과가 너무 짧으면 원본에서 물음표→마침표 + 질문형 표현 제거
     if (result.length < 20 && text.length >= 20) {
       result = text.replace(/\?/g, '.').replace(/\s{2,}/g, ' ').trim();
     }
 
-    // 5. 한국어가 아닌 문자가 대부분이면 에러
+    // 6. 한국어가 아닌 문자가 대부분이면 에러
     const koreanChars = (result.match(/[\uAC00-\uD7AF\u3131-\u3163\u1100-\u11FF]/g) || []).length;
     const totalChars = result.replace(/[\s\d.,!'"()\-:;~]/g, '').length;
     if (totalChars > 0 && koreanChars / totalChars < 0.5) {
