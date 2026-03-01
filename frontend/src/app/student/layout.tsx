@@ -6,6 +6,6 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthGuard allowedRoles={['student', 'guest']}>{children}</AuthGuard>
+    <AuthGuard allowedRoles={['student', 'guest', 'teacher']}>{children}</AuthGuard>
   );
 }
