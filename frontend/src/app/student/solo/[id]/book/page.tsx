@@ -78,7 +78,7 @@ export default function StoryBookPage() {
         </button>
         <span className="text-sm font-semibold text-amber-700">📚 동화책</span>
         <div className="flex items-center gap-3">
-          {isSoloMode && (
+          {(isSoloMode || storyMode === 'same_start') && (
             <button
               onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
               className="text-sm text-violet-500 hover:text-violet-700"
@@ -233,7 +233,7 @@ export default function StoryBookPage() {
             <div className="text-center py-6 bg-white rounded-2xl border border-dashed border-violet-200">
               <p className="text-3xl mb-2">🎨</p>
               <p className="text-sm text-gray-500 mb-3">아직 삽화가 없어요</p>
-              {isSoloMode && (
+              {(isSoloMode || storyMode === 'same_start') && (
                 <button
                   onClick={() => router.push(`/student/solo/${storyId}/illustrate`)}
                   className="px-4 py-2 bg-violet-500 text-white text-sm font-bold rounded-xl hover:bg-violet-600 transition-colors"

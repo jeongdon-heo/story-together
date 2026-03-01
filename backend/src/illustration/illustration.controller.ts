@@ -62,7 +62,7 @@ export class IllustrationController {
     });
     if (!story) return;
     const mode = story.session?.mode;
-    if ((mode === 'relay' || mode === 'same_start' || mode === 'branch') && user.role !== 'teacher') {
+    if ((mode === 'relay' || mode === 'branch') && user.role !== 'teacher') {
       throw new ForbiddenException('이 모드의 삽화는 선생님만 만들 수 있어요');
     }
   }

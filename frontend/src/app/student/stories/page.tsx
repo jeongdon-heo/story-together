@@ -139,7 +139,7 @@ function StoryCard({
 
         {isCompleted && (
           <>
-            {isSolo && (
+            {(isSolo || story.mode === 'same_start') && (
               <button
                 onClick={() => onNavigate(`/student/solo/${story.id}/illustrate`)}
                 className="flex-1 text-xs font-medium bg-indigo-50 text-indigo-600 rounded-lg px-2 py-2 hover:bg-indigo-100 transition-colors"

@@ -441,10 +441,16 @@ export default function SameStartStoryPage() {
             </button>
             <div className="flex gap-3 justify-center mb-3">
               <button
+                onClick={() => router.push(`/student/solo/${story.id}/illustrate`)}
+                className="px-5 py-3 border border-violet-400 text-violet-600 rounded-xl font-semibold hover:bg-violet-50"
+              >
+                🎨 삽화 만들기
+              </button>
+              <button
                 onClick={() => router.push(`/student/solo/${story.id}/book`)}
                 className="px-5 py-3 border border-amber-400 text-amber-600 rounded-xl font-semibold hover:bg-amber-50"
               >
-                책 보기
+                📖 책 보기
               </button>
             </div>
             <button
