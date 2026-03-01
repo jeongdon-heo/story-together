@@ -217,6 +217,12 @@ export class RealtimeGateway
         totalSeconds: state.totalSeconds,
       });
     }
+
+    // 현재 분기 모드 상태 전송 (늦게 참여한 학생에게)
+    const branchState = this.branchService.getState(data.storyId);
+    if (branchState) {
+      await this.sendBranchStateToClient(client, data.storyId, branchState);
+    }
   }
 
   /**
@@ -269,6 +275,70 @@ export class RealtimeGateway
       }
     } catch (e) {
       this.logger.warn(`모둠 멤버 동기화 실패: ${e}`);
+    }
+  }
+
+  /**
+   * 분기 모드: 현재 상태를 특정 클라이언트에게 전송 (늦게 참여한 학생용)
+   */
+  private async sendBranchStateToClient(
+    client: Socket,
+    storyId: string,
+    branchState: { phase: string; currentNodeId: string | null; votes: Map<string, number>; voteSecondsLeft: number; participants: any[]; currentWriterIdx: number },
+  ) {
+    if (branchState.phase === 'voting' && branchState.currentNodeId) {
+      // 현재 투표 중인 갈림길 정보 전송
+      try {
+        const node = await this.prisma.branchNode.findUnique({
+          where: { id: branchState.currentNodeId },
+        });
+        if (node) {
+          client.emit('branch:new_choices', {
+            branchNodeId: node.id,
+            depth: node.depth,
+            choices: node.choices,
+            voteTimeout: branchState.voteSecondsLeft,
+          });
+        }
+      } catch (e) {
+        this.logger.warn(`분기 상태 전송 실패: ${e}`);
+      }
+
+      // 현재 투표 현황 전송
+      if (branchState.votes.size > 0) {
+        const voteCounts: Record<number, number> = {};
+        for (const idx of branchState.votes.values()) {
+          voteCounts[idx] = (voteCounts[idx] || 0) + 1;
+        }
+        client.emit('branch:vote_update', {
+          branchNodeId: branchState.currentNodeId,
+          voteCounts,
+          totalVotes: branchState.votes.size,
+          totalParticipants: branchState.participants.length,
+        });
+      }
+
+      // 투표 타이머 현재값 전송
+      client.emit('branch:vote_timer_tick', {
+        branchNodeId: branchState.currentNodeId,
+        secondsLeft: branchState.voteSecondsLeft,
+      });
+    } else if (branchState.phase === 'student_writing') {
+      const writerIdx = branchState.currentWriterIdx % branchState.participants.length;
+      const writer = branchState.participants[writerIdx];
+      if (writer) {
+        client.emit('branch:student_turn', {
+          storyId,
+          currentStudentId: writer.userId,
+          currentStudentName: writer.name,
+          branchNodeId: branchState.currentNodeId,
+        });
+      }
+    } else if (branchState.phase === 'ai_writing') {
+      client.emit('branch:ai_writing', {
+        storyId,
+        branchNodeId: branchState.currentNodeId,
+      });
     }
   }
 
@@ -464,6 +534,13 @@ export class RealtimeGateway
         socketId: client.id,
         online: true,
       });
+    }
+
+    // 이미 진행 중이면 현재 상태를 이 클라이언트에게 전송
+    const existingState = this.branchService.getState(data.storyId);
+    if (existingState) {
+      await this.sendBranchStateToClient(client, data.storyId, existingState);
+      return;
     }
 
     await this.branchService.startBranch(data.storyId, data.sessionId);
