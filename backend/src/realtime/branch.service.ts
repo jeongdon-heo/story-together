@@ -455,6 +455,63 @@ export class BranchService {
       },
     });
 
+    // AI 이어쓰기 (학생 → AI 번갈아 쓰기)
+    state.phase = 'ai_writing';
+    this.server.to(room).emit('branch:ai_writing', { storyId, branchNodeId });
+
+    const previousParts = [
+      ...story.parts.map((p) => ({
+        role: (p.authorType === 'ai' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: p.text,
+      })),
+      { role: 'user' as const, content: text },
+    ];
+
+    try {
+      const aiText = await this.aiService.continueStory(
+        previousParts,
+        grade,
+        story.aiCharacter || 'grandmother',
+      );
+
+      const aiOrder = nextOrder + 1;
+      const aiPart = await this.prisma.storyPart.create({
+        data: {
+          storyId,
+          authorType: 'ai',
+          text: aiText,
+          order: aiOrder,
+          branchNodeId,
+          metadata: { mood: 'adventure' },
+        },
+      });
+
+      this.server.to(room).emit('branch:ai_complete', {
+        storyId,
+        branchNodeId,
+        newPart: {
+          id: aiPart.id,
+          authorType: 'ai',
+          text: aiText,
+          order: aiOrder,
+          metadata: aiPart.metadata,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`분기 모드 AI 이어쓰기 실패: ${err}`);
+      this.server.to(room).emit('branch:ai_complete', {
+        storyId,
+        branchNodeId,
+        newPart: {
+          id: `error-${Date.now()}`,
+          authorType: 'ai',
+          text: '(AI가 잠시 쉬고 있어요. 다음 친구가 이어서 써 주세요!)',
+          order: nextOrder + 1,
+        },
+      });
+    }
+
+    state.phase = 'student_writing';
     state.partsAfterBranch += 1;
     state.currentWriterIdx += 1;
 
