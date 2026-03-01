@@ -228,6 +228,13 @@ export default function SameStartStoryPage() {
             setGroupStoryId(res.data.id);
             setStoryParts(res.data.parts as any);
             setGroupRelayStarted(true);
+            // 릴레이가 서버에서 실행 중이 아닐 수 있으므로 시작 요청
+            // (이미 실행 중이면 서버에서 무시됨)
+            const foundStoryId = res.data!.id;
+            setTimeout(
+              () => startRelay(90, foundStoryId, myGroup.groupNumber),
+              800,
+            );
           }
         })
         .catch(() => {});
@@ -315,11 +322,8 @@ export default function SameStartStoryPage() {
       setStoryParts(res.data.parts as any);
       setGroupRelayStarted(true);
 
-      // 모둠 멤버 ID 추출
-      const groups = session.settings?.groups || {};
-      const memberIds = groups[String(myGroup.groupNumber)]?.memberIds || [];
-
-      setTimeout(() => startRelay(90, newStoryId, memberIds), 500);
+      // 백엔드에서 최신 모둠 멤버를 DB에서 직접 조회
+      setTimeout(() => startRelay(90, newStoryId, myGroup.groupNumber), 500);
     } catch {
       setError('이야기를 시작할 수 없습니다');
     } finally {

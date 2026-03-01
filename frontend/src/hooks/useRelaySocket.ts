@@ -163,13 +163,13 @@ export function useRelaySocket({
   }, [storyId]);
 
   const startRelay = useCallback(
-    (turnSeconds?: number, overrideStoryId?: string, groupMemberIds?: string[]) => {
+    (turnSeconds?: number, overrideStoryId?: string, groupNumber?: number) => {
       const sid = overrideStoryId || storyId;
       socketRef.current?.emit('relay:start', {
         storyId: sid,
         sessionId,
         turnSeconds,
-        groupMemberIds,
+        groupNumber,
       });
     },
     [storyId, sessionId],

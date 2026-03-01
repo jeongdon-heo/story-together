@@ -2,6 +2,7 @@ export interface StoryPart {
   id: string;
   authorType: 'ai' | 'student';
   authorId: string | null;
+  authorName?: string;
   text: string;
   order: number;
   metadata: Record<string, any>;

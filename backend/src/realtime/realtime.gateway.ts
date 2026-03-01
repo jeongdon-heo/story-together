@@ -155,6 +155,11 @@ export class RealtimeGateway
     this.relayService.joinSession(data.storyId, participant);
     this.branchService.joinSession(data.storyId, participant);
 
+    // 모둠 릴레이: 늦게 참여한 모둠 멤버도 턴 큐에 추가
+    if (data.storyId) {
+      await this.syncGroupMembersToRelay(data.storyId);
+    }
+
     this.socketMeta.set(client.id, {
       userId: data.userId,
       storyId: data.storyId,
@@ -180,6 +185,18 @@ export class RealtimeGateway
       })),
     });
 
+    // 모든 참여자에게 최신 목록 브로드캐스트 (그룹 멤버 동기화 후)
+    if (relayParticipants.length > 0) {
+      client.to(room).emit('participant_list', {
+        participants: relayParticipants.map((p) => ({
+          userId: p.userId,
+          name: p.name,
+          color: p.color,
+          online: p.online,
+        })),
+      });
+    }
+
     // 현재 릴레이 상태 전송
     const state = this.relayService.getState(data.storyId);
     if (state && state.participants.length > 0) {
@@ -199,6 +216,59 @@ export class RealtimeGateway
         secondsLeft: state.secondsLeft,
         totalSeconds: state.totalSeconds,
       });
+    }
+  }
+
+  /**
+   * 모둠 릴레이: 세션 설정에서 최신 모둠 멤버를 읽어 릴레이 참여자 큐에 동기화
+   */
+  private async syncGroupMembersToRelay(storyId: string) {
+    const relayState = this.relayService.getState(storyId);
+    if (!relayState) return;
+
+    try {
+      const story = await this.prisma.story.findUnique({
+        where: { id: storyId },
+        include: { session: true },
+      });
+      if (!story?.session) return;
+
+      const mode = story.session.mode;
+      const settings = story.session.settings as any;
+      if (mode !== 'same_start' || settings?.participationType !== 'group')
+        return;
+
+      const groupNumber = (story.metadata as any)?.groupNumber;
+      if (!groupNumber) return;
+
+      const groupMembers =
+        settings.groups?.[String(groupNumber)]?.memberIds || [];
+
+      // 릴레이 큐에 없는 멤버 추가
+      for (const memberId of groupMembers) {
+        const already = relayState.participants.find(
+          (p) => p.userId === memberId,
+        );
+        if (!already) {
+          const user = await this.prisma.user.findUnique({
+            where: { id: memberId },
+          });
+          if (user) {
+            relayState.participants.push({
+              userId: memberId,
+              name: user.name,
+              color: '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0'),
+              socketId: '',
+              online: false,
+            });
+            this.logger.log(
+              `모둠 릴레이 참여자 추가: ${user.name} → 스토리 ${storyId}`,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`모둠 멤버 동기화 실패: ${e}`);
     }
   }
 
@@ -231,11 +301,33 @@ export class RealtimeGateway
       sessionId: string;
       turnSeconds?: number;
       groupMemberIds?: string[];
+      groupNumber?: number;
     },
   ) {
     // 클라이언트가 아직 룸에 없을 수 있으므로 자동 join
     const room = `story:${data.storyId}`;
     await client.join(room);
+
+    // 모둠 모드: groupNumber가 있으면 DB에서 최신 멤버 목록 조회
+    let memberIds = data.groupMemberIds;
+    if (data.groupNumber) {
+      try {
+        const story = await this.prisma.story.findUnique({
+          where: { id: data.storyId },
+          include: { session: true },
+        });
+        if (story?.session) {
+          const settings = story.session.settings as any;
+          memberIds =
+            settings?.groups?.[String(data.groupNumber)]?.memberIds || [];
+          this.logger.log(
+            `모둠 ${data.groupNumber} 최신 멤버: ${memberIds?.length ?? 0}명`,
+          );
+        }
+      } catch (e) {
+        this.logger.warn(`모둠 멤버 조회 실패: ${e}`);
+      }
+    }
 
     // startRelay를 먼저 호출하여 상태를 생성한 후 joinSession 호출
     // (joinSession은 상태가 있어야 참여자를 등록할 수 있음)
@@ -243,7 +335,7 @@ export class RealtimeGateway
       data.storyId,
       data.sessionId,
       data.turnSeconds,
-      data.groupMemberIds,
+      memberIds,
     );
 
     const userId = (client as any).userId;
