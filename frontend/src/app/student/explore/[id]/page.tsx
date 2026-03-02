@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '../../../../hooks/useAuth';
 import { toBackendURL } from '../../../../lib/api';
 import {
   publishApi,
@@ -29,6 +30,8 @@ function saveLikedId(id: string) {
 export default function ExploreDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { isTeacher } = useAuth();
+  const homePath = isTeacher ? '/teacher' : '/student';
   const publishedId = params.id as string;
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +128,7 @@ export default function ExploreDetailPage() {
           <span>{liked ? '❤️' : '🤍'}</span>
           <span>{likeCount}</span>
         </button>
-        <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+        <button onClick={() => router.push(homePath)} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-5">

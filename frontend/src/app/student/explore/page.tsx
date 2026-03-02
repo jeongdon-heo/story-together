@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   publishApi,
   type PublishedStory,
@@ -68,6 +69,8 @@ function StoryCard({ story, onClick }: { story: PublishedStory; onClick: () => v
 
 export default function ExplorePage() {
   const router = useRouter();
+  const { isTeacher } = useAuth();
+  const homePath = isTeacher ? '/teacher' : '/student';
   const [items, setItems] = useState<PublishedStory[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -121,7 +124,7 @@ export default function ExplorePage() {
           >
             🏆 명예의 전당
           </button>
-          <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+          <button onClick={() => router.push(homePath)} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
         </div>
 
         {/* 필터 바 */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../../hooks/useAuth';
 import {
   publishApi,
   type HallOfFameEntry,
@@ -17,6 +18,8 @@ const RANK_STYLES = [
 
 export default function HallOfFamePage() {
   const router = useRouter();
+  const { isTeacher } = useAuth();
+  const homePath = isTeacher ? '/teacher' : '/student';
   const [entries, setEntries] = useState<HallOfFameEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +38,7 @@ export default function HallOfFamePage() {
       <div className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 px-4 py-3 flex items-center gap-3 border-b border-amber-100">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-700 text-xl">←</button>
         <h1 className="font-bold text-gray-900 flex-1">🏆 명예의 전당</h1>
-        <button onClick={() => router.push('/student')} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
+        <button onClick={() => router.push(homePath)} className="text-gray-400 hover:text-gray-700" title="홈으로">🏠</button>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-6">
