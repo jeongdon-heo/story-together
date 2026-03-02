@@ -50,7 +50,7 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       setError(
-        err.response?.data?.message || '로그인에 실패했습니다',
+        err.response?.data?.error?.message || err.response?.data?.message || err.message || '로그인에 실패했습니다',
       );
     }
   };
@@ -62,7 +62,7 @@ export default function LoginPage() {
       router.push('/student');
     } catch (err: any) {
       setError(
-        err.response?.data?.message || '게스트 로그인에 실패했습니다',
+        err.response?.data?.error?.message || err.response?.data?.message || err.message || '게스트 로그인에 실패했습니다',
       );
     }
   };

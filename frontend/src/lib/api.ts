@@ -21,6 +21,7 @@ export function toBackendURL(relativePath: string): string {
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -64,7 +65,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status !== 401) {
-      const msg = error.response?.data?.message || error.message || '요청에 실패했습니다';
+      const msg = error.response?.data?.error?.message || error.response?.data?.message || error.message || '요청에 실패했습니다';
       useToastStore.getState().addToast(msg, 'error');
     }
 
