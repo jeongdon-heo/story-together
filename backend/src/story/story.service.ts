@@ -175,6 +175,10 @@ export class StoryService {
       where: { id },
       include: {
         parts: { orderBy: { order: 'asc' } },
+        branchNodes: {
+          orderBy: { depth: 'asc' },
+          include: { storyParts: { orderBy: { order: 'asc' }, select: { id: true, authorType: true, text: true, order: true } } },
+        },
         session: {
           include: { classRoom: { select: { grade: true } } },
         },
